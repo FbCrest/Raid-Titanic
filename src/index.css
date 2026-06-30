@@ -119,8 +119,6 @@ body {
 
 .glass-item {
   background: rgb(255 255 255 / 0.032);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgb(255 255 255 / 0.075);
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
@@ -152,9 +150,7 @@ body {
 
 /* ── Card ── */
 .card-soft {
-  background: rgb(255 255 255 / 0.025);
-  backdrop-filter: blur(20px) saturate(160%);
-  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  background: rgb(6 8 16 / 0.7);
   border: 1px solid rgb(255 255 255 / 0.07);
   box-shadow:
     0 0 0 1px rgb(129 140 248 / 0.04),
