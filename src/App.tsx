@@ -100,7 +100,7 @@ export default function App() {
 
   return (
     <div className={`relative min-h-screen bg-[#080a10] text-slate-300 antialiased overflow-x-hidden transition-all duration-300 ${
-      isScreenshotMode ? 'pb-2 pt-2' : 'pb-12 pt-5 md:pt-8 lg:pt-10'
+      isScreenshotMode ? 'pb-2 pt-2' : 'pb-2 pt-3 md:pt-5'
     }`}>
 
       {/* ── Ambient background orbs ── */}
@@ -237,8 +237,51 @@ export default function App() {
           />
         </motion.section>
 
-
       </div>
+
+      {/* ── Footer ── */}
+      {!isScreenshotMode && (
+        <footer className="relative mt-4 w-full overflow-hidden border-t border-white/[0.05]">
+          {/* Shimmer line */}
+          <motion.div
+            className="absolute top-0 left-0 h-px"
+            style={{
+              background: 'linear-gradient(90deg, transparent, #818cf8, #a78bfa, #818cf8, transparent)',
+              width: '50%',
+            }}
+            animate={{ x: ['-50%', '200%'] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+          />
+
+          <div className="flex flex-col items-center justify-center gap-1.5 py-4 px-6 text-center sm:flex-row sm:gap-3">
+            <span className="text-xs text-slate-500">
+              Vẽ ra ngàn thế giới, nhưng không vẽ nổi một người đã rời đi{' '}
+              <motion.span
+                className="inline-block"
+                animate={{ scale: [1, 1.4, 1] }}
+                transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                💔
+              </motion.span>
+            </span>
+
+            <span className="hidden text-white/15 sm:inline">|</span>
+
+            <span className="text-xs text-slate-600">
+              Tạo bởi{' '}
+              <motion.span
+                className="font-semibold"
+                style={{ color: '#818cf8' }}
+                animate={{ opacity: [0.6, 1, 0.6] }}
+                transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+              >
+                Mèo.Đi.Bụi
+              </motion.span>
+              {' '}© 2025
+            </span>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
