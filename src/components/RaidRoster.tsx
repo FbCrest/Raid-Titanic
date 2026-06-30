@@ -128,9 +128,9 @@ const TeamCard: React.FC<TeamCardProps> = ({
                   boxShadow: '0 0 0 2px rgb(129 140 248 / 0.5), 0 0 24px rgb(99 102 241 / 0.35)',
                   transform: 'scale(1.02)',
                 } : {
-                  backgroundColor: `${hex}28`,
-                  borderColor: `${hex}55`,
-                  boxShadow: `inset 0 0 24px ${hex}12, 0 0 0 1px ${hex}18`,
+                  backgroundColor: `${hex}55`,
+                  borderColor: `${hex}75`,
+                  boxShadow: `inset 0 0 24px ${hex}18, 0 0 0 1px ${hex}30`,
                 }
               }
               title={isScreenshotMode ? undefined : 'Kéo thả để sắp xếp'}
