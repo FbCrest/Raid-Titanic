@@ -1,0 +1,6 @@
+{
+  "name": "Sắp Xếp Đội Hình Phó Bản",
+  "description": "Ứng dụng giúp sắp xếp và quản lý đội hình đi phó bản gồm 12 thành viên chia làm 2 đội, có thể tùy chỉnh tên, môn phái, ngày giờ và ảnh tiêu đề.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

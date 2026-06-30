@@ -1,0 +1,497 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --color-surface: #080a10;
+  --color-accent: #818cf8;
+  --color-neon-indigo: rgba(129, 140, 248, 0.45);
+  --color-neon-violet: rgba(167, 139, 250, 0.35);
+}
+
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--color-surface);
+  color: #cbd5e1;
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
+  color: #e0e7ff;
+}
+
+/* ── Keyframes ── */
+@keyframes soft-float {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50% { transform: translateY(-10px) scale(1.02); }
+}
+
+@keyframes neon-pulse {
+  0%, 100% { opacity: 0.55; filter: blur(60px); }
+  50% { opacity: 1; filter: blur(80px); }
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes border-glow {
+  0%, 100% { box-shadow: 0 0 8px rgb(129 140 248 / 0.15); }
+  50% { box-shadow: 0 0 20px rgb(129 140 248 / 0.35), 0 0 40px rgb(99 102 241 / 0.15); }
+}
+
+@keyframes slot-pop {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  60% { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slide-in-right {
+  from { opacity: 0; transform: translateX(8px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes ping-subtle {
+  0% { transform: scale(1); opacity: 1; }
+  75%, 100% { transform: scale(2.2); opacity: 0; }
+}
+
+.animate-soft-float { animation: soft-float 7s ease-in-out infinite; }
+.animate-neon-pulse { animation: neon-pulse 5s ease-in-out infinite; }
+.animate-shimmer { animation: shimmer 2.5s ease infinite; }
+.animate-slot-pop { animation: slot-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+.animate-slide-in { animation: slide-in-right 0.3s ease forwards; }
+.animate-fade-up { animation: fade-in-up 0.4s ease forwards; }
+.animate-spin-slow { animation: spin-slow 8s linear infinite; }
+.animate-ping-subtle { animation: ping-subtle 1.8s cubic-bezier(0,0,0.2,1) infinite; }
+
+/* ── Glass base ── */
+.glass {
+  background: rgb(255 255 255 / 0.045);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgb(255 255 255 / 0.09);
+}
+
+.glass-strong {
+  background: rgb(12 15 24 / 0.7);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid rgb(129 140 248 / 0.16);
+  box-shadow:
+    0 0 0 1px rgb(129 140 248 / 0.07),
+    0 8px 32px rgb(0 0 0 / 0.5),
+    inset 0 1px 0 rgb(255 255 255 / 0.06);
+}
+
+.glass-modal {
+  background: rgb(8 11 20 / 0.82);
+  backdrop-filter: blur(32px) saturate(200%);
+  -webkit-backdrop-filter: blur(32px) saturate(200%);
+  border: 1px solid rgb(129 140 248 / 0.22);
+  box-shadow:
+    0 0 1px rgb(129 140 248 / 0.5),
+    0 0 60px rgb(99 102 241 / 0.12),
+    0 32px 80px rgb(0 0 0 / 0.6),
+    inset 0 1px 0 rgb(255 255 255 / 0.07);
+}
+
+.glass-backdrop {
+  background: rgb(2 4 10 / 0.6);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+}
+
+.glass-item {
+  background: rgb(255 255 255 / 0.032);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgb(255 255 255 / 0.075);
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.glass-item:hover {
+  background: rgb(255 255 255 / 0.065);
+  border-color: rgb(129 140 248 / 0.22);
+  box-shadow: 0 0 20px rgb(99 102 241 / 0.1), inset 0 1px 0 rgb(255 255 255 / 0.05);
+}
+
+.glass-item-selected {
+  background: rgb(99 102 241 / 0.14);
+  border: 1px solid rgb(129 140 248 / 0.45);
+  box-shadow:
+    0 0 28px rgb(99 102 241 / 0.22),
+    inset 0 0 20px rgb(99 102 241 / 0.07),
+    inset 0 1px 0 rgb(255 255 255 / 0.1);
+}
+
+.glass-neon-border {
+  box-shadow:
+    0 0 0 1px rgb(129 140 248 / 0.15),
+    0 0 24px rgb(99 102 241 / 0.08);
+}
+
+.neon-dot {
+  box-shadow: 0 0 10px currentColor, 0 0 20px currentColor;
+}
+
+/* ── Card ── */
+.card-soft {
+  background: rgb(255 255 255 / 0.025);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  border: 1px solid rgb(255 255 255 / 0.07);
+  box-shadow:
+    0 0 0 1px rgb(129 140 248 / 0.04),
+    0 4px 24px rgb(0 0 0 / 0.4),
+    inset 0 1px 0 rgb(255 255 255 / 0.04);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card-soft:hover {
+  border-color: rgb(129 140 248 / 0.16);
+  box-shadow:
+    0 0 0 1px rgb(129 140 248 / 0.12),
+    0 8px 40px rgb(0 0 0 / 0.45),
+    0 0 30px rgb(99 102 241 / 0.07);
+}
+
+/* Team card variants */
+.card-team-1 {
+  border-top: 1px solid rgb(244 63 94 / 0.2);
+}
+.card-team-1:hover {
+  border-color: rgb(244 63 94 / 0.22);
+  box-shadow:
+    0 0 0 1px rgb(244 63 94 / 0.08),
+    0 8px 40px rgb(0 0 0 / 0.45),
+    0 0 30px rgb(244 63 94 / 0.06);
+}
+
+.card-team-2 {
+  border-top: 1px solid rgb(56 189 248 / 0.2);
+}
+.card-team-2:hover {
+  border-color: rgb(56 189 248 / 0.22);
+  box-shadow:
+    0 0 0 1px rgb(56 189 248 / 0.08),
+    0 8px 40px rgb(0 0 0 / 0.45),
+    0 0 30px rgb(56 189 248 / 0.06);
+}
+
+/* ── Buttons ── */
+.btn-primary {
+  background: linear-gradient(135deg, rgb(99 102 241 / 0.9) 0%, rgb(129 140 248 / 0.95) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: white;
+  font-weight: 600;
+  border-radius: 9999px;
+  border: 1px solid rgb(165 180 252 / 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  box-shadow:
+    0 0 24px rgb(99 102 241 / 0.28),
+    0 2px 14px rgb(99 102 241 / 0.32),
+    inset 0 1px 0 rgb(255 255 255 / 0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.08), transparent);
+  transform: translateX(-100%);
+}
+
+.btn-primary:hover::after {
+  animation: shimmer 0.8s ease forwards;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1.5px);
+  box-shadow:
+    0 0 36px rgb(99 102 241 / 0.45),
+    0 6px 20px rgb(99 102 241 / 0.38),
+    inset 0 1px 0 rgb(255 255 255 / 0.2);
+}
+
+.btn-primary:active {
+  transform: translateY(0px);
+}
+
+.btn-secondary {
+  background: rgb(255 255 255 / 0.05);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #cbd5e1;
+  font-weight: 500;
+  border: 1px solid rgb(255 255 255 / 0.1);
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: rgb(255 255 255 / 0.09);
+  border-color: rgb(129 140 248 / 0.25);
+  color: #e2e8f0;
+  box-shadow: 0 0 20px rgb(99 102 241 / 0.1);
+}
+
+.btn-danger {
+  background: rgb(239 68 68 / 0.12);
+  backdrop-filter: blur(8px);
+  color: #fca5a5;
+  font-weight: 500;
+  border: 1px solid rgb(239 68 68 / 0.2);
+  border-radius: 9999px;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+  background: rgb(239 68 68 / 0.22);
+  border-color: rgb(239 68 68 / 0.4);
+  color: #fecaca;
+  box-shadow: 0 0 20px rgb(239 68 68 / 0.15);
+}
+
+/* ── Inputs ── */
+.input-soft {
+  background: rgb(0 0 0 / 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgb(255 255 255 / 0.08);
+  border-radius: 0.75rem;
+  color: #e2e8f0;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.input-soft:hover {
+  border-color: rgb(129 140 248 / 0.18);
+  background: rgb(0 0 0 / 0.3);
+}
+
+.input-soft:focus {
+  outline: none;
+  border-color: rgb(129 140 248 / 0.5);
+  background: rgb(0 0 0 / 0.35);
+  box-shadow:
+    0 0 0 3px rgb(99 102 241 / 0.14),
+    0 0 20px rgb(99 102 241 / 0.1);
+}
+
+.input-soft::placeholder {
+  color: #475569;
+}
+
+/* ── Shimmer overlay on cards ── */
+.shimmer-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.03), transparent);
+  animation: shimmer 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* ── Member slot filled state ── */
+.slot-filled {
+  background: rgb(99 102 241 / 0.06);
+  border-color: rgb(129 140 248 / 0.18) !important;
+}
+
+.slot-filled:hover {
+  background: rgb(99 102 241 / 0.1);
+  border-color: rgb(129 140 248 / 0.28) !important;
+}
+
+/* ── Cursors ── */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+.btn-primary,
+.btn-secondary,
+.btn-danger,
+.glass-item,
+.glass-item-selected {
+  cursor: pointer;
+}
+
+button:disabled,
+[disabled] {
+  cursor: not-allowed;
+}
+
+input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]),
+textarea,
+.input-soft {
+  cursor: text;
+}
+
+[draggable="true"] {
+  cursor: grab;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.glass-backdrop {
+  cursor: default;
+}
+
+.cursor-edit {
+  cursor: pointer;
+}
+
+/* ── Scrollbar ── */
+.scroll-soft::-webkit-scrollbar { width: 5px; }
+.scroll-soft::-webkit-scrollbar-track { background: transparent; }
+.scroll-soft::-webkit-scrollbar-thumb {
+  background: rgb(129 140 248 / 0.22);
+  border-radius: 9999px;
+}
+.scroll-soft::-webkit-scrollbar-thumb:hover {
+  background: rgb(129 140 248 / 0.38);
+}
+
+/* ── Global scrollbar ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(8 10 16 / 0.9);
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgb(99 102 241 / 0.5), rgb(139 92 246 / 0.4));
+  border-radius: 9999px;
+  border: 1px solid rgb(129 140 248 / 0.1);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgb(99 102 241 / 0.75), rgb(139 92 246 / 0.65));
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ── Tag badges ── */
+.badge-role {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: 9999px;
+  border: 1px solid currentColor;
+  opacity: 0.75;
+}
+
+/* ── Progress bar ── */
+.progress-bar {
+  height: 3px;
+  border-radius: 9999px;
+  overflow: hidden;
+  background: rgb(255 255 255 / 0.06);
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 9999px;
+  transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Tooltip ── */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgb(15 18 30 / 0.95);
+  border: 1px solid rgb(129 140 248 / 0.2);
+  color: #e2e8f0;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 8px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+  backdrop-filter: blur(12px);
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* ── Divider ── */
+.divider-glow {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(129 140 248 / 0.25), transparent);
+}
+
+/* ── Team swap button ── */
+.btn-swap {
+  background: rgb(255 255 255 / 0.04);
+  border: 1px solid rgb(255 255 255 / 0.09);
+  border-radius: 9999px;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(10px);
+}
+
+.btn-swap:hover {
+  background: rgb(129 140 248 / 0.12);
+  border-color: rgb(129 140 248 / 0.3);
+  box-shadow: 0 0 20px rgb(99 102 241 / 0.15);
+  transform: scale(1.05);
+}
+
+.btn-swap:active {
+  transform: scale(0.96) rotate(180deg);
+}
+
+/* ── Slot name input — transparent, color per class ── */
+.slot-name-input::placeholder {
+  color: color-mix(in srgb, currentColor 40%, transparent);
+}
+
+/* ── Hide number input arrows ── */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] { -moz-appearance: textfield; }
