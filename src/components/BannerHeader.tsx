@@ -233,7 +233,7 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
         </div>
 
         {/* Date / Time */}
-        <div className={`glass glass-neon-border inline-flex items-center justify-center rounded-2xl font-medium text-white transition-all ${
+        <div className={`glass-banner glass-neon-border inline-flex items-center justify-center rounded-2xl font-medium text-white transition-all ${
           isScreenshotMode ? 'px-4 py-2 text-xs' : 'px-5 py-2.5 text-xs md:text-sm'
         }`}>
           <DateTimePicker
@@ -278,7 +278,7 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
                 setTempDesc(settings.description);
                 setIsEditingDesc(true);
               } : undefined}
-              className={`group relative inline-flex max-w-xl items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs text-white/80 transition glass cursor-edit ${
+              className={`group relative inline-flex max-w-xl items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs text-white/80 transition glass-banner cursor-edit ${
                 isScreenshotMode ? 'pointer-events-none' : 'hover:glass-neon-border hover:text-white/95'
               }`}
               title={isScreenshotMode ? undefined : "Click để chỉnh sửa ghi chú"}
