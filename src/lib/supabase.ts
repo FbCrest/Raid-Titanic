@@ -18,7 +18,7 @@ export type Profile = {
   id: string;
   username: string;
   display_name: string;
-  role: 'pending' | 'member' | 'admin';
+  role: 'pending' | 'member' | 'admin' | 'rejected';
   main_class: string;
   sub_class: string;
   discord: string;

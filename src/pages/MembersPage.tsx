@@ -35,9 +35,25 @@ export const MembersPage: React.FC = () => {
   useEffect(() => { fetchProfiles(); }, []);
 
   const rejectUser = async (id: string) => {
-    if (!confirm('Từ chối và xóa tài khoản này khỏi hệ thống?')) return;
+    if (!confirm('Từ chối và xóa tài khoản này?')) return;
     setUpdating(id);
-    await supabase.from('profiles').delete().eq('id', id);
+    // Gọi Edge Function để xóa cả auth.users + profiles
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-user`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ userId: id }),
+      }
+    );
+    if (!res.ok) {
+      const err = await res.json();
+      alert('Lỗi: ' + (err.error ?? 'Không xóa được'));
+    }
     await fetchProfiles();
     setUpdating(null);
   };

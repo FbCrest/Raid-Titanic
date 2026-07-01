@@ -9,7 +9,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
   display_name text not null,
-  role text not null default 'pending' check (role in ('pending', 'member', 'admin')),
+  role text not null default 'pending' check (role in ('pending', 'member', 'admin', 'rejected')),
   main_class text default '',
   sub_class text default '',
   discord text default '',

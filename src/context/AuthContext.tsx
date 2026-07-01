@@ -7,6 +7,7 @@ interface AuthContextValue {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  profileLoaded: boolean;
   isAdmin: boolean;
   isMember: boolean;
   isConfigured: boolean;
@@ -19,7 +20,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(isSupabaseConfigured); // if not configured, don't show spinner forever
+  const [loading, setLoading] = useState(isSupabaseConfigured);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase
@@ -28,6 +30,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .eq('id', userId)
       .single();
     setProfile(data ?? null);
+    setProfileLoaded(true);
+    setLoading(false);
   };
 
   const refreshProfile = async () => {
@@ -37,25 +41,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     if (!isSupabaseConfigured) return;
 
+    // Timeout fallback — nếu sau 5s vẫn loading thì tắt
+    const timeout = setTimeout(() => setLoading(false), 5000);
+
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      if (session?.user) fetchProfile(session.user.id).finally(() => setLoading(false));
-      else setLoading(false);
+      if (session?.user) {
+        fetchProfile(session.user.id).finally(() => {
+          setLoading(false);
+          clearTimeout(timeout);
+        });
+      } else {
+        setLoading(false);
+        clearTimeout(timeout);
+      }
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      if (session?.user) fetchProfile(session.user.id);
-      else setProfile(null);
+      if (session?.user) {
+        fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+        setProfileLoaded(false);
+        setLoading(false);
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   const signOut = async () => {
     if (!isSupabaseConfigured) return;
-    await supabase.auth.signOut();
+    setSession(null);
     setProfile(null);
+    setProfileLoaded(false);
+    await supabase.auth.signOut();
   };
 
   const isAdmin = profile?.role === 'admin';
@@ -63,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return (
     <AuthContext.Provider value={{
-      session, user: session?.user ?? null, profile, loading,
+      session, user: session?.user ?? null, profile, loading, profileLoaded,
       isAdmin, isMember, isConfigured: isSupabaseConfigured,
       signOut, refreshProfile,
     }}>

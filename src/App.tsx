@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './context/AuthContext';
 import { AuthPage } from './components/auth/AuthPage';
 import { PendingPage } from './components/auth/PendingPage';
+import { RejectedPage } from './components/auth/RejectedPage';
 import { OnlineApp } from './components/OnlineApp';
 import { AvailabilityPage } from './pages/AvailabilityPage';
 import { MembersPage } from './pages/MembersPage';
@@ -43,13 +44,15 @@ function Spinner() {
 }
 
 function ProtectedRoutes() {
-  const { session, profile, loading, isConfigured } = useAuth();
+  const { session, profile, loading, profileLoaded, isConfigured } = useAuth();
 
   if (!isConfigured) return <SetupPage />;
   if (loading) return <Spinner />;
   if (!session) return <AuthPage />;
-  if (profile?.role === 'pending') return <PendingPage />;
-  if (!profile) return <Spinner />;
+  if (!profileLoaded) return <Spinner />; // session có nhưng profile đang fetch
+  if (!profile) return <AuthPage />;      // profile null sau khi load xong → session orphan, về login
+  if (profile.role === 'pending') return <PendingPage />;
+  if (profile.role === 'rejected') return <RejectedPage />;
 
   return (
     <Routes>
