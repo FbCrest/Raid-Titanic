@@ -99,6 +99,31 @@ const TeamCard: React.FC<TeamCardProps> = ({
           const isFilled = member.name.trim().length > 0;
           const classData = getClassById(member.classId);
           const hex = classData?.hex ?? '#818cf8';
+          const isEmpty = !member.classId;
+
+          // Empty slot style
+          const emptyStyle = {
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            borderColor: 'rgba(255,255,255,0.10)',
+            borderStyle: 'dashed' as const,
+            boxShadow: 'none',
+          };
+
+          // Filled slot style
+          const filledStyle = isBeingDragged ? {
+            borderStyle: 'dashed' as const,
+            borderColor: `${hex}90`,
+            backgroundColor: `${hex}20`,
+          } : isDragOver ? {
+            borderColor: '#818cf8',
+            backgroundColor: 'rgb(99 102 241 / 0.22)',
+            boxShadow: '0 0 0 2px rgb(129 140 248 / 0.5), 0 0 24px rgb(99 102 241 / 0.35)',
+            transform: 'scale(1.02)',
+          } : {
+            backgroundColor: `${hex}40`,
+            borderColor: `${hex}60`,
+            boxShadow: `inset 0 0 24px ${hex}15, 0 0 0 1px ${hex}28`,
+          };
 
           return (
             <motion.div
@@ -117,22 +142,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
               className={`group flex items-center gap-2.5 rounded-xl border transition-all duration-150 ${
                 isScreenshotMode ? 'p-1.5' : 'p-2 md:p-2.5'
               } ${!isScreenshotMode ? 'active:cursor-grabbing' : 'pointer-events-none'}`}
-              style={
-                isBeingDragged ? {
-                  borderStyle: 'dashed',
-                  borderColor: `${hex}90`,
-                  backgroundColor: `${hex}20`,
-                } : isDragOver ? {
-                  borderColor: '#818cf8',
-                  backgroundColor: 'rgb(99 102 241 / 0.22)',
-                  boxShadow: '0 0 0 2px rgb(129 140 248 / 0.5), 0 0 24px rgb(99 102 241 / 0.35)',
-                  transform: 'scale(1.02)',
-                } : {
-                  backgroundColor: `${hex}40`,
-                  borderColor: `${hex}60`,
-                  boxShadow: `inset 0 0 24px ${hex}15, 0 0 0 1px ${hex}28`,
-                }
-              }
+              style={isEmpty ? emptyStyle : filledStyle}
               title={isScreenshotMode ? undefined : 'Kéo thả để sắp xếp'}
             >
               <div className="w-12 md:w-14 shrink-0">
@@ -141,6 +151,7 @@ const TeamCard: React.FC<TeamCardProps> = ({
                   selectedClassId={member.classId}
                   onSelectClass={(classId) => onUpdateMember(member.id, { classId })}
                   disabled={isScreenshotMode}
+                  empty={isEmpty}
                 />
               </div>
 
@@ -158,15 +169,19 @@ const TeamCard: React.FC<TeamCardProps> = ({
                     type="text"
                     value={member.name}
                     onChange={(e) => onUpdateMember(member.id, { name: e.target.value })}
-                    placeholder="Tên người chơi..."
+                    placeholder={isEmpty ? 'Chọn phái & nhập tên...' : 'Tên người chơi...'}
                     className="slot-name-input w-full bg-transparent px-2.5 py-1.5 text-lg outline-none"
-                    style={{ color: `${hex}ee`, caretColor: hex, fontFamily: "'Nunito', sans-serif", fontWeight: 900 }}
+                    style={isEmpty
+                      ? { color: 'rgba(255,255,255,0.22)', caretColor: '#fff', fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontStyle: 'italic' }
+                      : { color: `${hex}ee`, caretColor: hex, fontFamily: "'Nunito', sans-serif", fontWeight: 900 }
+                    }
+                    onFocus={() => { if (isEmpty) document.getElementById(`class-select-${member.id}-trigger`)?.click(); }}
                   />
                 )}
               </div>
 
               <AnimatePresence>
-                {!isScreenshotMode && isFilled && (
+                {!isScreenshotMode && !isEmpty && (
                   <motion.button
                     initial={{ opacity: 0, scale: 0.7 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -204,7 +219,7 @@ export const RaidRoster: React.FC<RaidRosterProps> = ({
   };
 
   const handleClearMember = (id: number) => {
-    onUpdateMembers(members.map((m) => (m.id === id ? { ...m, name: '' } : m)));
+    onUpdateMembers(members.map((m) => (m.id === id ? { ...m, name: '', classId: '' } : m)));
   };
 
   const swapMembers = useCallback((sourceId: number, targetId: number) => {

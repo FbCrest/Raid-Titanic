@@ -8,9 +8,7 @@ import { Camera, X, Cloud } from 'lucide-react';
 const INITIAL_MEMBERS: Member[] = Array.from({ length: 12 }, (_, i) => {
   const id = i + 1;
   const group = id <= 6 ? 1 : 2;
-  const defaultClasses = ['thiet-y', 'cuu-linh', 'to-van', 'toai-mong', 'huyet-ha', 'than-tuong'];
-  const classId = defaultClasses[i % defaultClasses.length];
-  return { id, name: '', classId, group };
+  return { id, name: '', classId: '', group };
 });
 
 const now = new Date();
@@ -35,8 +33,13 @@ export default function App() {
   const [members, setMembers] = useState<Member[]>(() => {
     try {
       const saved = localStorage.getItem('raid_roster_members');
-      return saved ? JSON.parse(saved) : INITIAL_MEMBERS;
-    } catch { return INITIAL_MEMBERS; }
+      if (saved) {
+        const parsed: Member[] = JSON.parse(saved);
+        // Migration: reset classId for slots with no name (empty slots should have no class)
+        return parsed.map((m) => ({ ...m, classId: m.name.trim() ? m.classId : '' }));
+      }
+    } catch { /* ignore */ }
+    return INITIAL_MEMBERS;
   });
 
   const [settings, setSettings] = useState<RaidSettings>(() => {
