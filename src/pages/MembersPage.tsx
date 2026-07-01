@@ -41,6 +41,8 @@ export const MembersPage: React.FC = () => {
     await fetchProfiles();
     setUpdating(null);
   };
+
+  const updateRole = async (id: string, role: Profile['role']) => {
     setUpdating(id);
     await supabase.from('profiles').update({ role }).eq('id', id);
     await fetchProfiles();
