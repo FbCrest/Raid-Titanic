@@ -9,7 +9,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   username text unique not null,
   display_name text not null,
-  role text not null default 'pending' check (role in ('pending', 'member', 'admin', 'rejected')),
+  role text not null default 'pending' check (role in ('pending', 'member', 'admin', 'superadmin', 'rejected')),
   main_class text default '',
   sub_class text default '',
   discord text default '',
@@ -37,10 +37,10 @@ create policy "profiles_insert"       on public.profiles for insert with check (
 create policy "profiles_update_self"  on public.profiles for update
   using (auth.uid() = id) with check (auth.uid() = id);
 create policy "profiles_update_admin" on public.profiles for update
-  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
--- Admin có thể xóa profile (từ chối tài khoản)
+  using (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin')));
+-- Admin/SuperAdmin có thể xóa profile (từ chối tài khoản)
 create policy "profiles_delete_admin" on public.profiles for delete
-  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+  using (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin')));
 
 -- ── 2. RAIDS ─────────────────────────────────────────────────
 create table if not exists public.raids (
@@ -62,13 +62,13 @@ drop policy if exists "raids_delete_admin" on public.raids;
 
 create policy "raids_select"       on public.raids for select using (true);
 create policy "raids_insert_admin" on public.raids for insert with check (
-  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
 );
 create policy "raids_update_admin" on public.raids for update using (
-  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
 );
 create policy "raids_delete_admin" on public.raids for delete using (
-  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
 );
 
 -- ── 3. RAID SLOTS ────────────────────────────────────────────
@@ -92,8 +92,8 @@ drop policy if exists "slots_delete_admin"  on public.raid_slots;
 create policy "slots_select" on public.raid_slots for select using (true);
 
 create policy "slots_update_member" on public.raid_slots for update using (
-  -- admin toàn quyền
-  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  -- admin/superadmin toàn quyền
+  exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
   -- slot của mình
   or registered_by = auth.uid()
   -- slot trống + raid đang mở → thành viên đăng ký
@@ -102,10 +102,10 @@ create policy "slots_update_member" on public.raid_slots for update using (
 );
 
 create policy "slots_insert_admin" on public.raid_slots for insert with check (
-  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
 );
 create policy "slots_delete_admin" on public.raid_slots for delete using (
-  exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+  exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
 );
 
 -- ── 4. TRIGGER updated_at ────────────────────────────────────
@@ -144,18 +144,18 @@ create policy "avail_select" on public.availability for select using (true);
 create policy "avail_upsert" on public.availability for insert
   with check (auth.uid() = user_id);
 
--- Thành viên update trạng thái của mình, admin update bất kỳ
+-- Thành viên update trạng thái của mình, admin/superadmin update bất kỳ
 create policy "avail_update" on public.availability for update
   using (
     auth.uid() = user_id or
-    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+    exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
   );
 
--- Thành viên xóa của mình, admin xóa bất kỳ
+-- Thành viên xóa của mình, admin/superadmin xóa bất kỳ
 create policy "avail_delete" on public.availability for delete
   using (
     auth.uid() = user_id or
-    exists (select 1 from public.profiles where id = auth.uid() and role = 'admin')
+    exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
   );
 
 drop trigger if exists avail_updated_at on public.availability;
@@ -189,7 +189,13 @@ begin
   end if;
 end $$;
 
--- ── 6. ADMIN ─────────────────────────────────────────────────
--- Chạy SAU KHI đã đăng ký tài khoản 0rion24k trên web
--- Nếu chưa đăng ký, dòng này sẽ không làm gì cả (không lỗi)
-update public.profiles set role = 'admin' where username = '0rion24k';
+-- ── 7. SUPERADMIN ───────────────────────────────────────────
+-- Cập nhật constraint để cho phép role 'superadmin' và 'rejected'
+alter table public.profiles
+  drop constraint if exists profiles_role_check;
+alter table public.profiles
+  add constraint profiles_role_check
+  check (role in ('pending', 'member', 'admin', 'superadmin', 'rejected'));
+
+-- Set 0rion24k là superadmin (quyền cao nhất)
+update public.profiles set role = 'superadmin' where username = '0rion24k';

@@ -58,9 +58,9 @@ export function useRaids() {
     setLoading(false);
   }, []);
 
-  // Tự động tạo raid cố định 7 ngày tới nếu chưa có
+  // Tự động tạo raid cố định 2 tuần tới nếu chưa có
   const ensureRecurringRaids = useCallback(async () => {
-    const days = getNextNDays(8); // hôm nay + 7 ngày
+    const days = getNextNDays(15); // hôm nay + 14 ngày
     const fixedDays = days.filter((d) => FIXED_DOW.includes(d.getDay()));
 
     const { data: existing } = await supabase
@@ -128,6 +128,13 @@ export function useRaids() {
     return { data, error };
   };
 
+  const updateRaid = async (raidId: string, title: string, raidDate: string, raidTime: string) => {
+    setRaids((prev) => prev.map((r) => r.id === raidId ? { ...r, title, raid_date: raidDate, raid_time: raidTime } : r));
+    const result = await supabase.from('raids').update({ title, raid_date: raidDate, raid_time: raidTime }).eq('id', raidId);
+    if (result.error) fetchRaids();
+    return result;
+  };
+
   const updateRaidStatus = async (raidId: string, status: Raid['status']) => {
     // Optimistic update
     setRaids((prev) => prev.map((r) => r.id === raidId ? { ...r, status } : r));
@@ -144,5 +151,5 @@ export function useRaids() {
     return result;
   };
 
-  return { raids, loading, ensureRecurringRaids, createRaid, updateRaidStatus, deleteRaid, refetch: fetchRaids };
+  return { raids, loading, ensureRecurringRaids, createRaid, updateRaid, updateRaidStatus, deleteRaid, refetch: fetchRaids };
 }

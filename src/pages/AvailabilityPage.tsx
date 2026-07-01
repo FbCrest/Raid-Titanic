@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, XCircle, Users, Bell } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Bell } from 'lucide-react';
 import { supabase, Raid, Availability, Profile } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useRaids } from '../hooks/useRaids';
@@ -26,9 +26,22 @@ export const AvailabilityPage: React.FC = () => {
   const [noteEditing, setNoteEditing] = useState<string | null>(null);
   const [noteValue, setNoteValue] = useState('');
 
-  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+
+  const isPastRaid = (raid: { raid_date: string; raid_time: string }) => {
+    if (raid.raid_date < today) return true;
+    if (raid.raid_date === today) {
+      const [h, m] = raid.raid_time.split(':').map(Number);
+      const raidEnd = new Date(now);
+      raidEnd.setHours(h + 2, m, 0, 0);
+      return now > raidEnd;
+    }
+    return false;
+  };
+
   const upcomingRaids = raids
-    .filter(r => r.raid_date >= today && r.status !== 'cancelled')
+    .filter(r => !isPastRaid(r) && r.status !== 'cancelled')
     .sort((a, b) => a.raid_date.localeCompare(b.raid_date));
 
   const fetchData = useCallback(async () => {
@@ -115,19 +128,25 @@ export const AvailabilityPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Trạng thái của bản thân */}
+        {/* Raids gộp */}
         <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.08 }}>
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Trạng thái của bạn</p>
           {upcomingRaids.length === 0 ? (
             <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-8 text-center">
               <p className="text-sm text-slate-600">Không có raid nào sắp tới.</p>
             </div>
           ) : (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {upcomingRaids.map((raid, idx) => {
                 const avail = myAvail[raid.id];
                 const isBusy = avail?.status === 'busy';
                 const isSaving = saving === raid.id;
+
+                // Admin data
+                const raidAvail = allAvail.filter(a => a.raid_id === raid.id);
+                const busyIds = new Set(raidAvail.filter(a => a.status === 'busy').map(a => a.user_id));
+                const totalMembers = allProfiles.length;
+                const busyCount = busyIds.size;
+                const availCount = totalMembers - busyCount;
 
                 return (
                   <motion.div
@@ -136,30 +155,11 @@ export const AvailabilityPage: React.FC = () => {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: idx * 0.05 }}
                     className={`rounded-2xl border overflow-hidden transition-all duration-200 ${
-                      isBusy
-                        ? 'bg-rose-500/5 border-rose-500/15'
-                        : 'bg-white/[0.025] border-white/[0.06]'
+                      isBusy ? 'bg-rose-500/5 border-rose-500/15' : 'bg-white/[0.025] border-white/[0.06]'
                     }`}
                   >
+                    {/* Row: info + toggle */}
                     <div className="flex items-center gap-4 px-4 py-3">
-                      {/* Date badge */}
-                      <div className={`shrink-0 flex flex-col items-center justify-center w-12 h-12 rounded-xl border text-center ${
-                        isBusy ? 'bg-rose-500/10 border-rose-500/20' : 'bg-white/[0.04] border-white/[0.08]'
-                      }`}>
-                        {(() => {
-                          const [y,m,d] = raid.raid_date.split('-').map(Number);
-                          const dt = new Date(Date.UTC(y,m-1,d));
-                          const dowShort = ['CN','T2','T3','T4','T5','T6','T7'][dt.getUTCDay()];
-                          return (
-                            <>
-                              <span className={`text-[9px] font-bold ${isBusy ? 'text-rose-400' : 'text-slate-500'}`}>{dowShort}</span>
-                              <span className={`text-lg font-black leading-none ${isBusy ? 'text-rose-300' : 'text-slate-200'}`}>{d}</span>
-                              <span className={`text-[9px] ${isBusy ? 'text-rose-500' : 'text-slate-600'}`}>{String(m).padStart(2,'0')}</span>
-                            </>
-                          );
-                        })()}
-                      </div>
-
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-200 truncate">{raid.title}</p>
@@ -214,81 +214,59 @@ export const AvailabilityPage: React.FC = () => {
                         )}
                       </AnimatePresence>
                     </div>
+
+                    {/* Admin: tổng quan thành viên — ngay trong cùng card */}
+                    {isAdmin && totalMembers > 0 && (
+                      <>
+                        <div className="mx-4 h-px bg-white/[0.05]" />
+                        <div className="px-4 py-3 flex flex-col gap-2">
+                          {/* Stats + progress */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3 text-xs">
+                              <span className="flex items-center gap-1 text-emerald-400">
+                                <CheckCircle size={11} /> {availCount} rảnh
+                              </span>
+                              <span className="flex items-center gap-1 text-rose-400">
+                                <XCircle size={11} /> {busyCount} bận
+                              </span>
+                            </div>
+                          </div>
+                          <div className="h-1 rounded-full bg-white/[0.06] overflow-hidden">
+                            <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
+                              style={{ width: totalMembers > 0 ? `${(availCount / totalMembers) * 100}%` : '100%' }} />
+                          </div>
+                          {/* Member chips */}
+                          <div className="flex flex-wrap gap-1.5 pt-0.5">
+                            {allProfiles.map(p => {
+                              const isMemberBusy = busyIds.has(p.id);
+                              const note = raidAvail.find(a => a.user_id === p.id)?.note;
+                              return (
+                                <div key={p.id} title={note ? `${p.display_name}: ${note}` : p.display_name}
+                                  className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium cursor-default ${
+                                    isMemberBusy
+                                      ? 'bg-rose-500/12 border-rose-500/20 text-rose-300'
+                                      : 'bg-emerald-500/8 border-emerald-500/15 text-emerald-300'
+                                  }`}
+                                >
+                                  {p.avatar_url
+                                    ? <img src={p.avatar_url} className="w-4 h-4 rounded object-cover shrink-0" alt="" />
+                                    : <span className="w-4 h-4 rounded bg-white/[0.1] flex items-center justify-center text-[8px] font-black shrink-0">{p.display_name[0]}</span>
+                                  }
+                                  {p.display_name}
+                                  {isMemberBusy ? <XCircle size={10} className="shrink-0" /> : <CheckCircle size={10} className="shrink-0" />}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </motion.div>
                 );
               })}
             </div>
           )}
         </motion.section>
-
-        {/* Admin: tổng quan */}
-        {isAdmin && upcomingRaids.length > 0 && (
-          <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.2 }}>
-            <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Users size={12} /> Tổng quan thành viên
-            </p>
-            <div className="flex flex-col gap-3">
-              {upcomingRaids.map(raid => {
-                const raidAvail = allAvail.filter(a => a.raid_id === raid.id);
-                const busyIds = new Set(raidAvail.filter(a => a.status === 'busy').map(a => a.user_id));
-                const totalMembers = allProfiles.length;
-                const busyCount = busyIds.size;
-                const availCount = totalMembers - busyCount;
-
-                return (
-                  <motion.div key={raid.id}
-                    className="rounded-2xl bg-white/[0.02] border border-white/[0.06] p-4">
-                    {/* Raid header */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-200">{raid.title}</p>
-                        <p className="text-xs text-slate-500">{formatRaidDate(raid.raid_date)} • {raid.raid_time}</p>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs">
-                        <span className="flex items-center gap-1 text-emerald-400">
-                          <CheckCircle size={11} /> {availCount} rảnh
-                        </span>
-                        <span className="flex items-center gap-1 text-rose-400">
-                          <XCircle size={11} /> {busyCount} bận
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Progress bar */}
-                    <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden mb-3">
-                      <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500"
-                        style={{ width: totalMembers > 0 ? `${(availCount / totalMembers) * 100}%` : '100%' }} />
-                    </div>
-
-                    {/* Member chips */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {allProfiles.map(p => {
-                        const isBusy = busyIds.has(p.id);
-                        const note = raidAvail.find(a => a.user_id === p.id)?.note;
-                        return (
-                          <div key={p.id} title={note ? `${p.display_name}: ${note}` : p.display_name}
-                            className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-all cursor-default ${
-                              isBusy
-                                ? 'bg-rose-500/12 border-rose-500/20 text-rose-300'
-                                : 'bg-emerald-500/8 border-emerald-500/15 text-emerald-300'
-                            }`}
-                          >
-                            {p.avatar_url
-                              ? <img src={p.avatar_url} className="w-4 h-4 rounded object-cover shrink-0" alt="" />
-                              : <span className="w-4 h-4 rounded bg-white/[0.1] flex items-center justify-center text-[8px] font-black shrink-0">{p.display_name[0]}</span>
-                            }
-                            {p.display_name}
-                            {isBusy ? <XCircle size={10} className="shrink-0" /> : <CheckCircle size={10} className="shrink-0" />}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </motion.section>
-        )}
       </div>
     </div>
   );

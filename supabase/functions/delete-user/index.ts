@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
       status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
     const { data: callerProfile } = await callerClient.from('profiles').select('role').eq('id', user.id).single();
-    if (callerProfile?.role !== 'admin') {
+    if (callerProfile?.role !== 'admin' && callerProfile?.role !== 'superadmin') {
       return new Response(JSON.stringify({ error: 'Forbidden' }), {
         status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

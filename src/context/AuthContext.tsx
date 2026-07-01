@@ -9,6 +9,7 @@ interface AuthContextValue {
   loading: boolean;
   profileLoaded: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   isMember: boolean;
   isConfigured: boolean;
   signOut: () => Promise<void>;
@@ -82,13 +83,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
   };
 
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'superadmin';
+  const isSuperAdmin = profile?.role === 'superadmin';
   const isMember = profile?.role === 'member' || isAdmin;
 
   return (
     <AuthContext.Provider value={{
       session, user: session?.user ?? null, profile, loading, profileLoaded,
-      isAdmin, isMember, isConfigured: isSupabaseConfigured,
+      isAdmin, isSuperAdmin, isMember, isConfigured: isSupabaseConfigured,
       signOut, refreshProfile,
     }}>
       {children}

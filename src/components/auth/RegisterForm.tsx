@@ -105,16 +105,16 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-slate-400">Tên tài khoản</label>
         <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
-          placeholder="vd: nguyenvana" required
+          placeholder="vd: nguyenvana" required title=""
           className="w-full rounded-xl bg-white/[0.05] border border-white/[0.08] px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all" />
         <p className="text-[10px] text-slate-600">3-20 ký tự, chỉ dùng a-z, 0-9, dấu _</p>
       </div>
 
       {/* Tên hiển thị */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-slate-400">Tên hiển thị (tên in-game)</label>
+        <label className="text-xs font-medium text-slate-400">Tên hiển thị</label>
         <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="vd: Nguyễn Văn A" required
+          placeholder="vd: Nguyễn Văn A" required title=""
           className="w-full rounded-xl bg-white/[0.05] border border-white/[0.08] px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all" />
       </div>
 
@@ -136,7 +136,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
         <div className="relative">
           <input type={showPw ? 'text' : 'password'} value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Tối thiểu 6 ký tự..." required
+            placeholder="Tối thiểu 6 ký tự..." required title=""
             className="w-full rounded-xl bg-white/[0.05] border border-white/[0.08] px-3.5 py-2.5 pr-10 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all" />
           <button type="button" onClick={() => setShowPw(!showPw)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
@@ -160,14 +160,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
           : <UserPlus size={15} />}
         {loading ? 'Đang đăng ký...' : 'Đăng ký'}
       </motion.button>
-
-      <p className="text-center text-xs text-slate-600">
-        Đã có tài khoản?{' '}
-        <button type="button" onClick={onSwitchToLogin}
-          className="text-indigo-400 hover:text-indigo-300 transition-colors">
-          Đăng nhập
-        </button>
-      </p>
     </form>
   );
 };

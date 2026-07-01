@@ -13,6 +13,17 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Fix Chrome autofill white background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0e1018 inset !important;
+  -webkit-text-fill-color: #e2e8f0 !important;
+  caret-color: #e2e8f0;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
 body {
   font-family: var(--font-sans);
   background-color: var(--color-surface);
@@ -499,4 +510,21 @@ input[type="number"] { -moz-appearance: textfield; }
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid rgb(255 255 255 / 0.12);
+}
+
+/* ── Marquee scroll on hover ── */
+@keyframes marquee-scroll {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.marquee-hover {
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.marquee-hover:hover .marquee-inner {
+  display: inline-block;
+  animation: marquee-scroll 4s linear infinite;
+  /* Duplicate text via content trick — handled in JS with data attr */
 }

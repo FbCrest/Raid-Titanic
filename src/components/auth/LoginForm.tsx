@@ -39,6 +39,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
           onChange={(e) => setUsername(e.target.value)}
           placeholder="Nhập tên tài khoản..."
           required
+          title=""
           autoComplete="username"
           className="w-full rounded-xl bg-white/[0.05] border border-white/[0.08] px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all"
         />
@@ -90,13 +91,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         )}
         {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
       </motion.button>
-
-      <p className="text-center text-xs text-slate-600">
-        Chưa có tài khoản?{' '}
-        <button type="button" onClick={onSwitchToRegister} className="text-indigo-400 hover:text-indigo-300 transition-colors">
-          Đăng ký ngay
-        </button>
-      </p>
     </form>
   );
 };
