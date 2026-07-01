@@ -17,6 +17,7 @@ body {
   font-family: var(--font-sans);
   background-color: var(--color-surface);
   color: #cbd5e1;
+  scrollbar-gutter: stable;
 }
 
 ::selection {

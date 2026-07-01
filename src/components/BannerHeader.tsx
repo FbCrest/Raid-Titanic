@@ -10,9 +10,10 @@ interface BannerHeaderProps {
   settings: RaidSettings;
   onUpdateSettings: (settings: RaidSettings) => void;
   isScreenshotMode?: boolean;
+  readOnly?: boolean;
 }
 
-export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSettings, isScreenshotMode = false }) => {
+export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSettings, isScreenshotMode = false, readOnly = false }) => {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [dragActive, setDragActive] = useState(false);
@@ -140,7 +141,7 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
       </div>
 
       {/* Banner Controls */}
-      {!isScreenshotMode && (
+      {!isScreenshotMode && !readOnly && (
         <div className="absolute top-4 right-4 z-20 flex gap-2">
           <button
             id="btn-upload-banner"
@@ -213,7 +214,7 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
             </div>
           ) : (
             <h1
-              onClick={!isScreenshotMode ? () => {
+              onClick={!isScreenshotMode && !readOnly ? () => {
                 setTempTitle(settings.title);
                 setIsEditingTitle(true);
               } : undefined}
@@ -223,7 +224,7 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
               title={isScreenshotMode ? undefined : "Click để chỉnh sửa tiêu đề"}
             >
               <span>{settings.title}</span>
-              {!isScreenshotMode && (
+              {!isScreenshotMode && !readOnly && (
                 <span className="rounded-lg border border-white/20 bg-white/15 p-1 opacity-0 backdrop-blur-sm transition duration-200 group-hover:opacity-100">
                   <Edit2 size={12} className="text-white/80" />
                 </span>
@@ -239,7 +240,7 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
           <DateTimePicker
             value={settings.dateTime}
             onChange={(display) => onUpdateSettings({ ...settings, dateTime: display })}
-            isScreenshotMode={isScreenshotMode}
+            isScreenshotMode={isScreenshotMode || readOnly}
           />
         </div>
 
@@ -274,12 +275,12 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
             </div>
           ) : (
             <p
-              onClick={!isScreenshotMode ? () => {
+              onClick={!isScreenshotMode && !readOnly ? () => {
                 setTempDesc(settings.description);
                 setIsEditingDesc(true);
               } : undefined}
               className={`group relative inline-flex max-w-xl items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs text-white/80 transition glass-banner cursor-edit ${
-                isScreenshotMode ? 'pointer-events-none' : 'hover:glass-neon-border hover:text-white/95'
+                isScreenshotMode || readOnly ? 'pointer-events-none' : 'hover:glass-neon-border hover:text-white/95'
               }`}
               title={isScreenshotMode ? undefined : "Click để chỉnh sửa ghi chú"}
             >

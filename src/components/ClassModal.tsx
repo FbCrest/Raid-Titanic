@@ -15,12 +15,15 @@ interface ClassModalProps {
 export const ClassModal: React.FC<ClassModalProps> = ({ isOpen, onClose, onSelectClass, selectedClassId }) => {
   useEffect(() => {
     if (!isOpen) return;
-    const prev = document.body.style.overflow;
+    // Tính scrollbar width để bù vào, tránh layout shift
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
     document.body.style.overflow = 'hidden';
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => {
-      document.body.style.overflow = prev;
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
       window.removeEventListener('keydown', onKey);
     };
   }, [isOpen, onClose]);
