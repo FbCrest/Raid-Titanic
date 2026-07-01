@@ -30,12 +30,16 @@ drop policy if exists "profiles_select" on public.profiles;
 drop policy if exists "profiles_insert" on public.profiles;
 drop policy if exists "profiles_update_self" on public.profiles;
 drop policy if exists "profiles_update_admin" on public.profiles;
+drop policy if exists "profiles_delete_admin" on public.profiles;
 
 create policy "profiles_select"       on public.profiles for select using (true);
 create policy "profiles_insert"       on public.profiles for insert with check (auth.uid() = id);
 create policy "profiles_update_self"  on public.profiles for update
   using (auth.uid() = id) with check (auth.uid() = id);
 create policy "profiles_update_admin" on public.profiles for update
+  using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
+-- Admin có thể xóa profile (từ chối tài khoản)
+create policy "profiles_delete_admin" on public.profiles for delete
   using (exists (select 1 from public.profiles where id = auth.uid() and role = 'admin'));
 
 -- ── 2. RAIDS ─────────────────────────────────────────────────

@@ -34,7 +34,13 @@ export const MembersPage: React.FC = () => {
 
   useEffect(() => { fetchProfiles(); }, []);
 
-  const updateRole = async (id: string, role: Profile['role']) => {
+  const rejectUser = async (id: string) => {
+    if (!confirm('Từ chối và xóa tài khoản này khỏi hệ thống?')) return;
+    setUpdating(id);
+    await supabase.from('profiles').delete().eq('id', id);
+    await fetchProfiles();
+    setUpdating(null);
+  };
     setUpdating(id);
     await supabase.from('profiles').update({ role }).eq('id', id);
     await fetchProfiles();
@@ -103,9 +109,9 @@ export const MembersPage: React.FC = () => {
                       className="flex items-center gap-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/25 transition-all disabled:opacity-50">
                       <CheckCircle size={12} /> Duyệt
                     </button>
-                    <button type="button" disabled={updating === p.id} onClick={() => updateRole(p.id, 'pending')}
-                      className="h-7 w-7 rounded-lg flex items-center justify-center text-rose-400 bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all disabled:opacity-50">
-                      <XCircle size={12} />
+                    <button type="button" disabled={updating === p.id} onClick={() => rejectUser(p.id)}
+                      className="flex items-center gap-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 px-3 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/20 transition-all disabled:opacity-50">
+                      <XCircle size={12} /> Từ chối
                     </button>
                   </div>
                 </motion.div>
