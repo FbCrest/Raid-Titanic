@@ -104,6 +104,17 @@ export const AvailabilityPage: React.FC = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // ── Realtime subscriptions ──
+  useEffect(() => {
+    if (!profile) return;
+    const ch = supabase
+      .channel(`avail-rt-${profile.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'availability' }, fetchData)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'day_availability' }, fetchData)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [profile, fetchData]);
+
   // ── toggle raid availability ──
   const toggleRaidAvail = async (raid: Raid) => {
     if (!profile) return;

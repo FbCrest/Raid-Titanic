@@ -615,7 +615,7 @@ const RaidPickerItem: React.FC<{
           ) : (
             <button type="button"
               onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
-              className="flex-1 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-400 hover:bg-rose-500/8 transition-all">
+              className="flex-1 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/8 transition-all">
               🗑 Xóa
             </button>
           )}

@@ -60,6 +60,16 @@ export const AvailabilityModal: React.FC<AvailabilityModalProps> = ({ onClose })
     fetchAvailability();
   }, [fetchAvailability]);
 
+  // Realtime — cập nhật khi thành viên khác thay đổi
+  useEffect(() => {
+    if (!profile) return;
+    const ch = supabase
+      .channel(`avail-modal-${profile.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'availability' }, fetchAvailability)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [profile, fetchAvailability]);
+
   const toggleStatus = async (raid: Raid) => {
     if (!profile) return;
     const current = availMap[raid.id];

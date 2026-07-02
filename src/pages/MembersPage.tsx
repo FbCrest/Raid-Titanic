@@ -237,7 +237,14 @@ export const MembersPage: React.FC = () => {
     setLoading(false);
   };
 
-  useEffect(() => { fetchProfiles(); }, []);
+  useEffect(() => {
+    fetchProfiles();
+    const ch = supabase
+      .channel('members-page-profiles')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, fetchProfiles)
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, []);
 
   const rejectUser = (id: string) => {
     const p = profiles.find(p => p.id === id);

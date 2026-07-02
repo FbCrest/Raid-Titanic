@@ -27,7 +27,7 @@ export function useRaidSlots(raidId: string | null) {
 
     if (!raidId) return;
 
-    const channelName = `slots-${raidId}-${Date.now()}`;
+    const channelName = `slots-${raidId}`;
     let sub: ReturnType<typeof supabase.channel> | null = null;
     try {
       sub = supabase

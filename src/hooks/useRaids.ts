@@ -101,16 +101,14 @@ export function useRaids() {
   useEffect(() => {
     fetchRaids();
 
-    // Realtime subscription (chỉ bật nếu WebSocket khả dụng)
     let sub: ReturnType<typeof supabase.channel> | null = null;
     try {
-      const channelName = `raids-channel-${Date.now()}`;
       sub = supabase
-        .channel(channelName)
+        .channel('raids-global')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'raids' }, fetchRaids)
         .subscribe();
     } catch (e) {
-      console.warn('Realtime not available, using polling');
+      console.warn('Realtime not available');
     }
 
     return () => { if (sub) supabase.removeChannel(sub); };
