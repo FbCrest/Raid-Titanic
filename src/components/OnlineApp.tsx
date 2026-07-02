@@ -296,10 +296,10 @@ export const OnlineApp: React.FC = () => {
         )}
 
         {/* Raid content */}
-        <motion.section id="roster-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }}>
-          <AnimatePresence mode="wait">
+        <motion.section id="roster-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }} style={{ minHeight: '400px' }}>
+          <AnimatePresence mode="sync">
             {selectedRaid ? (
-              <motion.div key={selectedRaid.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25 }}>
+              <motion.div key={selectedRaid.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
                 <RaidView raid={selectedRaid} isScreenshotMode={isScreenshotMode} />
               </motion.div>
             ) : (

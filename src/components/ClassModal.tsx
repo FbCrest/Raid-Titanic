@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Zap, Users } from 'lucide-react';
@@ -26,66 +26,84 @@ const MemberCard: React.FC<{
   onFill: (name: string, classId: string) => void;
 }> = ({ m, mainCls, subCls, onFill }) => {
   const [open, setOpen] = useState(false);
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({});
+
+  const handleOpen = () => {
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPopupStyle({
+        position: 'fixed',
+        top: rect.bottom + 4,
+        left: rect.left,
+        zIndex: 9999,
+      });
+    }
+    setOpen(v => !v);
+  };
 
   return (
     <div className="relative w-full">
       {/* Card compact */}
       <button
+        ref={btnRef}
         type="button"
-        onClick={() => setOpen(v => !v)}
+        onClick={handleOpen}
         className={`w-full flex items-center justify-between gap-1.5 rounded-xl border transition-all px-2.5 py-2 ${
           open ? 'bg-white/[0.07] border-white/[0.15]' : 'bg-white/[0.025] border-white/[0.06] hover:border-white/[0.1] hover:bg-white/[0.04]'
         }`}
       >
-        <p className="text-xs font-semibold text-slate-200 min-w-0">{m.display_name}</p>
+        <p className="text-xs font-semibold text-slate-200 min-w-0 truncate">{m.display_name}</p>
         <div className="flex items-center gap-1 shrink-0">
           {mainCls && <img src={`/icon-phai/${mainCls.iconName}`} className="w-5 h-5 object-contain" alt={mainCls.name} title={mainCls.name} />}
           {subCls && <img src={`/icon-phai/${subCls.iconName}`} className="w-5 h-5 object-contain opacity-70" alt={subCls.name} title={subCls.name} />}
         </div>
       </button>
 
-      {/* Sub-popup chọn phái */}
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.div className="fixed inset-0 z-[300]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.92, y: 6 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.92, y: 6 }}
-              transition={{ duration: 0.15 }}
-              className="absolute left-0 top-full mt-1 z-[301] min-w-max rounded-xl overflow-hidden shadow-xl"
-              style={{ background: '#0f1520', border: '1px solid rgba(255,255,255,0.1)' }}
-              onClick={e => e.stopPropagation()}
-            >
-              {mainCls && (
-                <button type="button"
-                  onClick={() => { onFill(m.display_name, mainCls.id); setOpen(false); }}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 hover:bg-white/[0.06] transition-all text-left">
-                  <img src={`/icon-phai/${mainCls.iconName}`} className="w-6 h-6 object-contain shrink-0" alt="" />
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: mainCls.hex }}>{mainCls.name}</p>
-                    <p className="text-[10px] text-slate-500">Phái chính</p>
-                  </div>
-                </button>
-              )}
-              {mainCls && subCls && <div className="h-px bg-white/[0.06]" />}
-              {subCls && (
-                <button type="button"
-                  onClick={() => { onFill(m.display_name, subCls.id); setOpen(false); }}
-                  className="flex items-center gap-2.5 w-full px-3.5 py-2.5 hover:bg-white/[0.06] transition-all text-left">
-                  <img src={`/icon-phai/${subCls.iconName}`} className="w-6 h-6 object-contain shrink-0" alt="" />
-                  <div>
-                    <p className="text-sm font-bold" style={{ color: subCls.hex }}>{subCls.name}</p>
-                    <p className="text-[10px] text-slate-500">Phái phụ</p>
-                  </div>
-                </button>
-              )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* Sub-popup chọn phái — render qua portal để không bị overflow cắt */}
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <>
+              <motion.div className="fixed inset-0 z-[9998]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                onClick={() => setOpen(false)} />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 6 }}
+                transition={{ duration: 0.15 }}
+                style={{ ...popupStyle, background: '#0f1520', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', minWidth: 160 }}
+                onClick={e => e.stopPropagation()}
+              >
+                {mainCls && (
+                  <button type="button"
+                    onClick={() => { onFill(m.display_name, mainCls.id); setOpen(false); }}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 hover:bg-white/[0.06] transition-all text-left">
+                    <img src={`/icon-phai/${mainCls.iconName}`} className="w-6 h-6 object-contain shrink-0" alt="" />
+                    <div>
+                      <p className="text-sm font-bold" style={{ color: mainCls.hex }}>{mainCls.name}</p>
+                      <p className="text-[10px] text-slate-500">Phái chính</p>
+                    </div>
+                  </button>
+                )}
+                {mainCls && subCls && <div className="h-px bg-white/[0.06]" />}
+                {subCls && (
+                  <button type="button"
+                    onClick={() => { onFill(m.display_name, subCls.id); setOpen(false); }}
+                    className="flex items-center gap-2.5 w-full px-3.5 py-2.5 hover:bg-white/[0.06] transition-all text-left">
+                    <img src={`/icon-phai/${subCls.iconName}`} className="w-6 h-6 object-contain shrink-0" alt="" />
+                    <div>
+                      <p className="text-sm font-bold" style={{ color: subCls.hex }}>{subCls.name}</p>
+                      <p className="text-[10px] text-slate-500">Phái phụ</p>
+                    </div>
+                  </button>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 };
