@@ -172,7 +172,48 @@ begin
   end if;
 end $$;
 
--- ── 6. REALTIME ──────────────────────────────────────────────
+-- ── 6. DAY AVAILABILITY (báo bận theo ngày tự do) ──────────
+-- Dùng cho những ngày không có raid nhưng muốn biết ai rảnh/bận
+create table if not exists public.day_availability (
+  id         uuid    primary key default gen_random_uuid(),
+  avail_date date    not null,
+  user_id    uuid    not null references public.profiles(id) on delete cascade,
+  status     text    not null default 'available' check (status in ('available', 'busy')),
+  note       text    default '',
+  updated_at timestamptz default now(),
+  unique(avail_date, user_id)
+);
+alter table public.day_availability enable row level security;
+
+drop policy if exists "day_avail_select" on public.day_availability;
+drop policy if exists "day_avail_insert" on public.day_availability;
+drop policy if exists "day_avail_update" on public.day_availability;
+drop policy if exists "day_avail_delete" on public.day_availability;
+
+create policy "day_avail_select" on public.day_availability for select using (true);
+create policy "day_avail_insert" on public.day_availability for insert with check (auth.uid() = user_id);
+create policy "day_avail_update" on public.day_availability for update
+  using (auth.uid() = user_id or
+    exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin')));
+create policy "day_avail_delete" on public.day_availability for delete
+  using (auth.uid() = user_id or
+    exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin')));
+
+drop trigger if exists day_avail_updated_at on public.day_availability;
+create trigger day_avail_updated_at before update on public.day_availability
+  for each row execute function update_updated_at();
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'day_availability'
+  ) then
+    alter publication supabase_realtime add table public.day_availability;
+  end if;
+end $$;
+
+-- ── 7. REALTIME ──────────────────────────────────────────────
 do $$
 begin
   if not exists (

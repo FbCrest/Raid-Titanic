@@ -146,7 +146,7 @@ export const OnlineApp: React.FC = () => {
                 transition={{ duration: 3, repeat: Infinity, repeatDelay: 4, ease: 'easeInOut' }}
                 style={{ filter: 'drop-shadow(0 0 8px rgba(129,140,248,0.5))' }}
               />
-              <h1 className="text-base font-bold text-slate-100">🚢Tàu Titanic</h1>
+              <h1 className="text-base font-bold text-slate-100">🚢Tàu Titanic『镇海潮生』</h1>
             </div>
             <div className="flex items-center gap-2">
               {/* Thành viên — tất cả đều thấy */}
@@ -236,7 +236,7 @@ export const OnlineApp: React.FC = () => {
 
         {/* Banner */}
         <motion.section id="banner-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.08 }}>
-          <BannerHeader settings={settings} onUpdateSettings={() => {}} isScreenshotMode={isScreenshotMode} readOnly={true} />
+          <BannerHeader settings={settings} onUpdateSettings={setSettings} isScreenshotMode={isScreenshotMode} />
         </motion.section>
 
         {/* Raid navigation bar — ẩn khi chụp ảnh */}

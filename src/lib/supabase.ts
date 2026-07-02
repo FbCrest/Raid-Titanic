@@ -58,3 +58,12 @@ export type Availability = {
   note: string;
   updated_at: string;
 };
+
+export type DayAvailability = {
+  id: string;
+  avail_date: string; // 'YYYY-MM-DD'
+  user_id: string;
+  status: 'available' | 'busy';
+  note: string;
+  updated_at: string;
+};
