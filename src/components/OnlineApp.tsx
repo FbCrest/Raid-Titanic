@@ -31,7 +31,7 @@ const DOW_FULL = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ N
 export const OnlineApp: React.FC = () => {
   const { profile, isAdmin, isSuperAdmin, signOut } = useAuth();
   const navigate = useNavigate();
-  const { raids, ensureRecurringRaids, updateRaidStatus } = useRaids();
+  const { raids, ensureRecurringRaids, updateRaidStatus, deleteRaid } = useRaids();
   const [pendingCount, setPendingCount] = useState(0);
 
   // Fetch pending member count for admin badge
@@ -303,6 +303,7 @@ export const OnlineApp: React.FC = () => {
               const next = raid.status === 'cancelled' ? 'open' : 'cancelled';
               await updateRaidStatus(raid.id, next);
             }}
+            onDelete={async (raid) => { await deleteRaid(raid.id); }}
             onClose={() => setShowRaidPicker(false)}
           />
         )}
@@ -462,6 +463,7 @@ interface RaidPickerModalProps {
   isAdmin: boolean;
   onSelect: (id: string) => void;
   onToggleStatus: (raid: Raid) => void;
+  onDelete: (raid: Raid) => void;
   onClose: () => void;
 }
 
@@ -481,12 +483,14 @@ const RaidPickerItem: React.FC<{
   isAdmin: boolean;
   onSelect: (id: string) => void;
   onToggleStatus: (raid: Raid) => void;
+  onDelete: (raid: Raid) => void;
   onEdit: (raid: Raid, title: string, date: string, time: string) => Promise<void>;
   dimmed?: boolean;
   index?: number;
-}> = ({ raid, isSelected, isAdmin, onSelect, onToggleStatus, onEdit, dimmed, index }) => {
+}> = ({ raid, isSelected, isAdmin, onSelect, onToggleStatus, onDelete, onEdit, dimmed, index }) => {
   const isCancelled = raid.status === 'cancelled';
   const [editing, setEditing] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [title, setTitle] = useState(raid.title);
   const [dateTimeDisplay, setDateTimeDisplay] = useState(buildDisplayValue(raid.raid_date, raid.raid_time));
   const [saving, setSaving] = useState(false);
@@ -577,26 +581,51 @@ const RaidPickerItem: React.FC<{
         </button>
       )}
 
-      {/* Admin toggle — compact, bottom strip */}
+      {/* Admin bottom strip: 2 nút bằng nhau */}
       {isAdmin && !editing && (
-        <button
-          type="button"
-          disabled={dimmed}
-          onClick={(e) => { e.stopPropagation(); onToggleStatus(raid); }}
-          className={`w-full rounded-b-xl px-3 py-1 text-xs font-semibold border-t transition-all disabled:opacity-30 disabled:cursor-not-allowed ${
-            isCancelled
-              ? 'text-emerald-300 border-emerald-500/15 hover:bg-emerald-500/10'
-              : 'text-rose-400 border-rose-500/10 hover:bg-rose-500/08'
-          }`}
-        >
-          {isCancelled ? '↩ Mở lại' : '✕ Nghỉ raid'}
-        </button>
+        <div className="flex border-t border-white/[0.05] rounded-b-xl overflow-hidden">
+          {/* Trái: Nghỉ / Mở lại */}
+          <button
+            type="button"
+            disabled={dimmed}
+            onClick={(e) => { e.stopPropagation(); onToggleStatus(raid); setConfirmDelete(false); }}
+            className={`flex-1 py-1.5 text-xs font-semibold transition-all disabled:opacity-30 disabled:cursor-not-allowed border-r border-white/[0.05] ${
+              isCancelled
+                ? 'text-emerald-300 hover:bg-emerald-500/10'
+                : 'text-rose-400 hover:bg-rose-500/8'
+            }`}
+          >
+            {isCancelled ? '↩ Mở lại' : '✕ Nghỉ raid'}
+          </button>
+
+          {/* Phải: Xóa (confirm 2 bước) */}
+          {confirmDelete ? (
+            <>
+              <button type="button"
+                onClick={(e) => { e.stopPropagation(); onDelete(raid); }}
+                className="flex-1 py-1.5 text-xs font-bold text-white bg-rose-500/30 hover:bg-rose-500/50 transition-all">
+                ⚠ Xác nhận
+              </button>
+              <button type="button"
+                onClick={(e) => { e.stopPropagation(); setConfirmDelete(false); }}
+                className="px-2.5 py-1.5 text-xs text-slate-500 hover:text-slate-300 border-l border-white/[0.05] transition-all">
+                ✕
+              </button>
+            </>
+          ) : (
+            <button type="button"
+              onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
+              className="flex-1 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-400 hover:bg-rose-500/8 transition-all">
+              🗑 Xóa
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
 };
 
-const RaidPickerModal: React.FC<RaidPickerModalProps> = ({ raids, selectedRaidId, isAdmin, onSelect, onToggleStatus, onClose }) => {
+const RaidPickerModal: React.FC<RaidPickerModalProps> = ({ raids, selectedRaidId, isAdmin, onSelect, onToggleStatus, onDelete, onClose }) => {
   const { updateRaid } = useRaids();
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -647,6 +676,7 @@ const RaidPickerModal: React.FC<RaidPickerModalProps> = ({ raids, selectedRaidId
               {upcoming.map((raid, i) => (
                 <RaidPickerItem key={raid.id} raid={raid} isSelected={raid.id === selectedRaidId}
                   isAdmin={isAdmin} index={i} onSelect={onSelect} onToggleStatus={onToggleStatus}
+                  onDelete={onDelete}
                   onEdit={async (r, t, d, ti) => { await updateRaid(r.id, t, d, ti); }} />
               ))}
             </div>
@@ -670,6 +700,7 @@ const RaidPickerModal: React.FC<RaidPickerModalProps> = ({ raids, selectedRaidId
                     {[...past].reverse().filter((_, i) => i % 2 === 0).map((raid, i) => (
                       <RaidPickerItem key={raid.id} raid={raid} isSelected={raid.id === selectedRaidId}
                         isAdmin={isAdmin} index={i * 2} onSelect={onSelect} onToggleStatus={onToggleStatus}
+                        onDelete={onDelete}
                         onEdit={async (r, t, d, ti) => { await updateRaid(r.id, t, d, ti); }} dimmed />
                     ))}
                   </div>
@@ -677,6 +708,7 @@ const RaidPickerModal: React.FC<RaidPickerModalProps> = ({ raids, selectedRaidId
                     {[...past].reverse().filter((_, i) => i % 2 === 1).map((raid, i) => (
                       <RaidPickerItem key={raid.id} raid={raid} isSelected={raid.id === selectedRaidId}
                         isAdmin={isAdmin} index={i * 2 + 1} onSelect={onSelect} onToggleStatus={onToggleStatus}
+                        onDelete={onDelete}
                         onEdit={async (r, t, d, ti) => { await updateRaid(r.id, t, d, ti); }} dimmed />
                     ))}
                   </div>
