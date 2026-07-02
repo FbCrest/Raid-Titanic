@@ -237,11 +237,13 @@ export const OnlineApp: React.FC = () => {
                   </div>
                   <span className="text-xs font-semibold text-slate-300 leading-none">{profile?.display_name}</span>
                   {isSuperAdmin ? (
-                    <span className="text-[9px] font-bold text-yellow-300 bg-yellow-500/15 border border-yellow-500/25 rounded-md px-1.5 py-0.5 leading-none">
+                    <span className="flex items-center gap-1 text-[9px] font-bold text-yellow-300 bg-yellow-500/15 border border-yellow-500/25 rounded-md px-1.5 py-0.5 leading-none">
+                      <img src="/Super Admin.gif" alt="" className="w-3 h-3 object-contain" />
                       S.ADMIN
                     </span>
                   ) : isAdmin ? (
-                    <span className="text-[9px] font-bold text-rose-300 bg-rose-500/15 border border-rose-500/25 rounded-md px-1.5 py-0.5 leading-none">
+                    <span className="flex items-center gap-1 text-[9px] font-bold text-rose-300 bg-rose-500/15 border border-rose-500/25 rounded-md px-1.5 py-0.5 leading-none">
+                      <img src="/Admin.gif" alt="" className="w-3 h-3 object-contain" />
                       ADMIN
                     </span>
                   ) : null}

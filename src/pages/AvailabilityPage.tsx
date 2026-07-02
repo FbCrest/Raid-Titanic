@@ -56,14 +56,14 @@ export const AvailabilityPage: React.FC = () => {
   const [noteEditing, setNoteEditing] = useState<string | null>(null);
   const [noteValue,   setNoteValue]   = useState('');
 
-  // filter upcoming raids (not cancelled, not past)
+  // filter upcoming raids (not cancelled, not past) — dùng cho calendar dots
   const upcomingRaids = useMemo(() => {
     return raids
       .filter(r => r.status !== 'cancelled' && r.raid_date >= today)
       .sort((a, b) => a.raid_date.localeCompare(b.raid_date));
   }, [raids, today]);
 
-  // raids grouped by date string for calendar dots
+  // raids grouped by date string for calendar dots (chỉ raid active)
   const raidsByDate = useMemo(() => {
     const map: Record<string, Raid[]> = {};
     upcomingRaids.forEach(r => {
@@ -72,6 +72,16 @@ export const AvailabilityPage: React.FC = () => {
     });
     return map;
   }, [upcomingRaids]);
+
+  // tất cả raids theo ngày (kể cả cancelled) — dùng cho detail panel
+  const allRaidsByDate = useMemo(() => {
+    const map: Record<string, Raid[]> = {};
+    raids.forEach(r => {
+      if (!map[r.raid_date]) map[r.raid_date] = [];
+      map[r.raid_date].push(r);
+    });
+    return map;
+  }, [raids]);
 
   // fetch all availability data
   const fetchData = useCallback(async () => {
@@ -205,13 +215,20 @@ export const AvailabilityPage: React.FC = () => {
   const daysInMonth = getDaysInMonth(viewYear, viewMonth);
 
   // colour a calendar cell based on busy ratio (for admin) — now replaced by teamBusyCount
-  // is this date marked busy by ME?
+  // is this date marked busy by ME? — raid cancelled cũng coi như bận
   const isMeBusy = (dateStr: string) => {
-    const dayRaids = raidsByDate[dateStr] ?? [];
+    const dayRaids = allRaidsByDate[dateStr] ?? [];
     for (const r of dayRaids) {
+      if (r.status === 'cancelled') return true;
       if (myRaidAvail[r.id]?.status === 'busy') return true;
     }
     return myDayAvail[dateStr]?.status === 'busy';
+  };
+
+  // ngày có raid cancelled (để tô màu khác với bận)
+  const isCancelledDay = (dateStr: string) => {
+    const dayRaids = allRaidsByDate[dateStr] ?? [];
+    return dayRaids.some(r => r.status === 'cancelled');
   };
 
   // how many team members are busy on this date (admin)
@@ -226,8 +243,8 @@ export const AvailabilityPage: React.FC = () => {
     return Math.max(dayBusy, raidBusy);
   };
 
-  // data for the selected date panel
-  const selectedRaids = raidsByDate[selected] ?? [];
+  // data for the selected date panel — dùng allRaidsByDate để kể cả raid cancelled
+  const selectedRaids = allRaidsByDate[selected] ?? [];
   const hasRaidOnSelected = selectedRaids.length > 0;
 
   // ── render ──
@@ -293,6 +310,7 @@ export const AvailabilityPage: React.FC = () => {
               const isPast  = dateStr < today;
               const hasRaid = !!raidsByDate[dateStr];
               const meBusy  = isMeBusy(dateStr);
+              const cancelled = isCancelledDay(dateStr);
               const busyCnt = teamBusyCount(dateStr);
               // heat level for admin badge
               const heatLevel = isAdmin && busyCnt > 0
@@ -304,8 +322,10 @@ export const AvailabilityPage: React.FC = () => {
               return (
                 <button key={d} type="button" onClick={() => setSelected(dateStr)}
                   className={`relative flex items-center justify-center rounded-xl h-10 text-xs font-medium transition-all overflow-hidden
-                    ${isSel && meBusy && !isPast
+                    ${isSel && cancelled && !isPast
                       ? 'bg-rose-500/35 border-2 border-rose-400/60 text-rose-100'
+                      : isSel && meBusy && !isPast
+                      ? 'bg-yellow-500/30 border-2 border-yellow-400/60 text-yellow-100'
                       : isSel && isToday && hasRaid
                       ? 'border-2 border-emerald-400/80 text-emerald-100 bg-emerald-500/20'
                       : isSel && isToday
@@ -314,8 +334,10 @@ export const AvailabilityPage: React.FC = () => {
                       ? 'border-2 border-emerald-400/70 text-emerald-100 bg-emerald-500/18'
                       : isSel
                       ? 'bg-white/[0.12] border border-white/[0.22] text-slate-100'
-                      : meBusy && !isPast
+                      : cancelled && !isPast
                       ? 'bg-rose-500/20 border border-rose-500/30 text-rose-200 hover:bg-rose-500/28'
+                      : meBusy && !isPast
+                      ? 'bg-yellow-500/18 border border-yellow-500/30 text-yellow-200 hover:bg-yellow-500/25'
                       : isToday && hasRaid
                       ? 'border border-emerald-400/60 text-emerald-200 bg-emerald-500/10 hover:bg-emerald-500/15'
                       : isToday
@@ -327,12 +349,21 @@ export const AvailabilityPage: React.FC = () => {
                       : 'text-slate-300 hover:bg-white/[0.06]'}
                   `}
                 >
-                  {/* Strikethrough overlay khi bận */}
-                  {meBusy && !isPast && (
+                  {/* Strikethrough overlay khi nghỉ raid — màu đỏ */}
+                  {cancelled && !isPast && (
                     <span className="absolute inset-0 pointer-events-none flex items-center justify-center">
                       <svg className="absolute inset-0 w-full h-full opacity-40" viewBox="0 0 40 40" preserveAspectRatio="none">
                         <line x1="4" y1="4"  x2="36" y2="36" stroke="rgb(248 113 113)" strokeWidth="1.5" strokeLinecap="round"/>
                         <line x1="36" y1="4" x2="4"  y2="36" stroke="rgb(248 113 113)" strokeWidth="1.5" strokeLinecap="round"/>
+                      </svg>
+                    </span>
+                  )}
+                  {/* Strikethrough overlay khi bận — màu vàng */}
+                  {meBusy && !cancelled && !isPast && (
+                    <span className="absolute inset-0 pointer-events-none flex items-center justify-center">
+                      <svg className="absolute inset-0 w-full h-full opacity-40" viewBox="0 0 40 40" preserveAspectRatio="none">
+                        <line x1="4" y1="4"  x2="36" y2="36" stroke="rgb(250 204 21)" strokeWidth="1.5" strokeLinecap="round"/>
+                        <line x1="36" y1="4" x2="4"  y2="36" stroke="rgb(250 204 21)" strokeWidth="1.5" strokeLinecap="round"/>
                       </svg>
                     </span>
                   )}
@@ -346,10 +377,9 @@ export const AvailabilityPage: React.FC = () => {
                       ${isSel ? 'bg-emerald-300' : 'bg-emerald-400'}`} />
                   )}
 
-                  {/* Admin heat badge — góc dưới phải: số người bận */}
+                  {/* Admin heat badge — góc trên phải: số người bận */}
                   {heatLevel && (
-                    <span className={`absolute bottom-0.5 right-0.5 min-w-[16px] h-[16px] px-1 rounded-md flex items-center justify-center text-[10px] font-black leading-none
-                      ${heatLevel === 'high' ? 'bg-rose-500/35 text-rose-300' : heatLevel === 'mid' ? 'bg-orange-500/30 text-orange-300' : 'bg-yellow-500/25 text-yellow-400'}`}>
+                    <span className="absolute top-0.5 right-0.5 min-w-[16px] h-[16px] px-1 rounded-md flex items-center justify-center text-[10px] font-black leading-none bg-rose-600 text-white">
                       {busyCnt}
                     </span>
                   )}
@@ -365,9 +395,19 @@ export const AvailabilityPage: React.FC = () => {
               <span className="relative w-5 h-4 inline-flex items-center justify-center rounded-md bg-emerald-500/10 border border-emerald-500/30 shrink-0">
                 <span className="absolute top-0.5 right-0.5 w-1 h-1 rounded-full bg-emerald-400" />
               </span>
-              Có raid
+              <span className="text-emerald-400 font-semibold">Có raid</span>
             </span>
-            {/* Bận: nền đỏ + chéo */}
+            {/* Bận: nền vàng + chéo vàng */}
+            <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
+              <span className="relative w-5 h-4 inline-flex items-center justify-center rounded-md bg-yellow-500/20 border border-yellow-500/30 shrink-0 overflow-hidden">
+                <svg className="absolute inset-0 w-full h-full opacity-50" viewBox="0 0 20 16" preserveAspectRatio="none">
+                  <line x1="2" y1="2" x2="18" y2="14" stroke="rgb(250 204 21)" strokeWidth="1.5"/>
+                  <line x1="18" y1="2" x2="2" y2="14" stroke="rgb(250 204 21)" strokeWidth="1.5"/>
+                </svg>
+              </span>
+              <span className="text-yellow-400 font-semibold">Bạn bận</span>
+            </span>
+            {/* Nghỉ raid: nền đỏ + chéo đỏ */}
             <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
               <span className="relative w-5 h-4 inline-flex items-center justify-center rounded-md bg-rose-500/20 border border-rose-500/30 shrink-0 overflow-hidden">
                 <svg className="absolute inset-0 w-full h-full opacity-50" viewBox="0 0 20 16" preserveAspectRatio="none">
@@ -375,13 +415,13 @@ export const AvailabilityPage: React.FC = () => {
                   <line x1="18" y1="2" x2="2" y2="14" stroke="rgb(248 113 113)" strokeWidth="1.5"/>
                 </svg>
               </span>
-              Bạn bận
+              <span className="text-rose-400 font-semibold">Nghỉ raid</span>
             </span>
             {/* Admin heat */}
             {isAdmin && (
               <span className="flex items-center gap-1.5 text-[10px] text-slate-500">
                 <span className="relative w-5 h-4 inline-flex items-center justify-center rounded-md bg-white/[0.04] border border-white/[0.08] shrink-0">
-                  <span className="absolute top-0 right-0 min-w-[10px] h-[12px] px-0.5 rounded-sm flex items-center justify-center text-[8px] font-black bg-yellow-500/25 text-yellow-400">3</span>
+                  <span className="absolute top-0 right-0 min-w-[10px] h-[12px] px-0.5 rounded-sm flex items-center justify-center text-[8px] font-black bg-rose-600 text-white">3</span>
                 </span>
                 Số người bận trong team
               </span>
@@ -406,12 +446,36 @@ export const AvailabilityPage: React.FC = () => {
               const isBusy  = avail?.status === 'busy';
               const isSav   = saving === `raid-${raid.id}`;
               const noteKey = `raid-${raid.id}`;
+              const isCancelled = raid.status === 'cancelled';
 
               // admin data
               const raidAllAvail = allRaidAvail.filter(a => a.raid_id === raid.id);
               const busyIds  = new Set(raidAllAvail.filter(a => a.status === 'busy').map(a => a.user_id));
               const availCount = allProfiles.length - busyIds.size;
 
+              // ── Card raid đã hủy ──
+              if (isCancelled) {
+                return (
+                  <div key={raid.id} className="rounded-2xl border overflow-hidden bg-rose-500/5 border-rose-500/15">
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <div className="h-8 w-8 rounded-xl bg-rose-500/15 border border-rose-500/20 flex items-center justify-center shrink-0">
+                        <XCircle size={14} className="text-rose-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-sm font-semibold text-slate-400 line-through truncate">{raid.title}</p>
+                          <span className="text-[10px] font-bold bg-rose-500/20 border border-rose-500/30 text-rose-400 rounded-full px-2 py-0.5 shrink-0">
+                            Nghỉ raid
+                          </span>
+                        </div>
+                        <p className="text-xs text-rose-400/70 mt-0.5">📝 Hôm nay nghỉ raid</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // ── Card raid thường ──
               return (
                 <div key={raid.id}
                   className={`rounded-2xl border overflow-hidden transition-all ${

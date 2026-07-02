@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Shield, Clock, CheckCircle, XCircle, Search, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Users, Shield, Clock, CheckCircle, XCircle, Search, AlertTriangle, KeyRound, Swords } from 'lucide-react';
 import { supabase, Profile } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { CLASS_OPTIONS } from '../data/classes';
@@ -286,8 +286,13 @@ export const MembersPage: React.FC = () => {
 
   const pending = profiles.filter(p => p.role === 'pending');
   const members = profiles.filter(p => p.role !== 'pending');
+  const filteredSuperAdmins = members.filter(p =>
+    p.role === 'superadmin' &&
+    (p.display_name.toLowerCase().includes(search.toLowerCase()) ||
+     p.username.toLowerCase().includes(search.toLowerCase()))
+  );
   const filteredAdmins = members.filter(p =>
-    (p.role === 'admin' || p.role === 'superadmin') &&
+    p.role === 'admin' &&
     (p.display_name.toLowerCase().includes(search.toLowerCase()) ||
      p.username.toLowerCase().includes(search.toLowerCase()))
   );
@@ -305,7 +310,7 @@ export const MembersPage: React.FC = () => {
         <div className="absolute bottom-20 right-1/3 h-[400px] w-[400px] rounded-full bg-violet-600/6" style={{ filter: 'blur(70px)' }} />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-2xl px-4 sm:px-6 py-6 flex flex-col gap-6">
+      <div className="relative z-10 mx-auto max-w-5xl px-4 sm:px-6 py-6 flex flex-col gap-6">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
           className="flex items-center gap-4">
@@ -319,10 +324,78 @@ export const MembersPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-base font-bold text-slate-100">Thành viên</h1>
-              <p className="text-xs text-slate-500">{members.filter(p => p.role === 'member').length} thành viên • {members.filter(p => p.role === 'admin' || p.role === 'superadmin').length} admin</p>
+              <p className="text-xs text-slate-500">{members.filter(p => p.role === 'member').length} thành viên • {members.filter(p => p.role === 'admin').length} admin • {members.filter(p => p.role === 'superadmin').length} super admin</p>
             </div>
           </div>
         </motion.div>
+
+        {/* ── Stats ── */}
+        {!loading && members.length > 0 && (() => {
+          const superAdminCount = members.filter(p => p.role === 'superadmin').length;
+          const adminCount      = members.filter(p => p.role === 'admin').length;
+          const memberCount     = members.filter(p => p.role === 'member').length;
+
+          // thống kê phái chính
+          const classCount: Record<string, number> = {};
+          members.forEach(p => {
+            if (p.main_class) classCount[p.main_class] = (classCount[p.main_class] ?? 0) + 1;
+          });
+          const topClasses = Object.entries(classCount)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 5);
+
+          return (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.04 }}
+              className="rounded-2xl bg-white/[0.025] border border-white/[0.06] overflow-hidden">
+              <div className="px-4 pt-3 pb-1">
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-widest">Tổng quan</p>
+              </div>
+              <div className="px-4 pb-3 flex flex-col gap-3">
+                {/* Role counts */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {superAdminCount > 0 && (
+                    <div className="flex items-center gap-1.5 rounded-xl bg-yellow-500/10 border border-yellow-500/20 px-3 py-1.5">
+                      <img src="/Super Admin.gif" alt="" className="w-4 h-4 object-contain" />
+                      <span className="text-xs font-bold text-yellow-300">Super Admin</span>
+                      <span className="text-xs font-black text-yellow-200 bg-yellow-500/20 rounded-full px-1.5">{superAdminCount}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1.5 rounded-xl bg-rose-500/10 border border-rose-500/20 px-3 py-1.5">
+                    <img src="/Admin.gif" alt="" className="w-4 h-4 object-contain" />
+                    <span className="text-xs font-bold text-rose-300">Admin</span>
+                    <span className="text-xs font-black text-rose-200 bg-rose-500/20 rounded-full px-1.5">{adminCount}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5">
+                    <img src="/Member.gif" alt="" className="w-4 h-4 object-contain" />
+                    <span className="text-xs font-bold text-emerald-300">Thành viên</span>
+                    <span className="text-xs font-black text-emerald-200 bg-emerald-500/20 rounded-full px-1.5">{memberCount}</span>
+                  </div>
+                </div>
+
+                {/* Phái chính */}
+                {topClasses.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest mb-2">Phái chính phổ biến</p>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {topClasses.map(([classId, count]) => {
+                        const cls = CLASS_OPTIONS.find(c => c.id === classId);
+                        if (!cls) return null;
+                        return (
+                          <div key={classId} className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border"
+                            style={{ background: `${cls.hex}10`, borderColor: `${cls.hex}30` }}>
+                            <img src={`/icon-phai/${cls.iconName}`} className="w-4 h-4 object-contain shrink-0" alt="" />
+                            <span className="text-xs font-semibold" style={{ color: cls.hex }}>{cls.name}</span>
+                            <span className="text-[10px] font-black rounded-full px-1.5 py-0.5" style={{ background: `${cls.hex}20`, color: cls.hex }}>{count}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          );
+        })()}
 
         {/* Pending — chỉ admin */}
         {isAdmin && pending.length > 0 && (
@@ -380,13 +453,25 @@ export const MembersPage: React.FC = () => {
             </div>
           ) : (
             <>
+              {/* Super Admin group */}
+              {filteredSuperAdmins.length > 0 && (
+                <div className="flex flex-col gap-3">
+                  <p className="text-xs font-semibold text-yellow-400 uppercase tracking-wider flex items-center gap-1.5">
+                    <img src="/Super Admin.gif" alt="" className="w-3.5 h-3.5 object-contain" /> Super Admin ({filteredSuperAdmins.length})
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {filteredSuperAdmins.map((p, idx) => <MemberCard key={p.id} p={p} idx={idx} isMe={p.id === myProfile?.id} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} updating={updating} updateRole={updateRole} rejectUser={rejectUser} onViewProfile={setViewingProfile} />)}
+                  </div>
+                </div>
+              )}
+
               {/* Admin group */}
               {filteredAdmins.length > 0 && (
-                <div className="flex flex-col gap-3">
+                <div className={`flex flex-col gap-3 ${filteredSuperAdmins.length > 0 ? 'mt-4' : ''}`}>
                   <p className="text-xs font-semibold text-rose-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Shield size={11} /> Admin ({filteredAdmins.length})
+                    <img src="/Admin.gif" alt="" className="w-3.5 h-3.5 object-contain" /> Admin ({filteredAdmins.length})
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {filteredAdmins.map((p, idx) => <MemberCard key={p.id} p={p} idx={idx} isMe={p.id === myProfile?.id} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} updating={updating} updateRole={updateRole} rejectUser={rejectUser} onViewProfile={setViewingProfile} />)}
                   </div>
                 </div>
@@ -394,17 +479,17 @@ export const MembersPage: React.FC = () => {
 
               {/* Member group */}
               {filteredMembers.length > 0 && (
-                <div className="flex flex-col gap-3 mt-2">
+                <div className={`flex flex-col gap-3 ${(filteredSuperAdmins.length > 0 || filteredAdmins.length > 0) ? 'mt-4' : ''}`}>
                   <p className="text-xs font-semibold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Users size={11} /> Thành viên ({filteredMembers.length})
+                    <img src="/Member.gif" alt="" className="w-3.5 h-3.5 object-contain" /> Thành viên ({filteredMembers.length})
                   </p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     {filteredMembers.map((p, idx) => <MemberCard key={p.id} p={p} idx={idx} isMe={p.id === myProfile?.id} isAdmin={isAdmin} isSuperAdmin={isSuperAdmin} updating={updating} updateRole={updateRole} rejectUser={rejectUser} onViewProfile={setViewingProfile} />)}
                   </div>
                 </div>
               )}
 
-              {filteredAdmins.length === 0 && filteredMembers.length === 0 && (
+              {filteredSuperAdmins.length === 0 && filteredAdmins.length === 0 && filteredMembers.length === 0 && (
                 <p className="text-sm text-slate-600 text-center py-8">Không tìm thấy thành viên nào.</p>
               )}
             </>
