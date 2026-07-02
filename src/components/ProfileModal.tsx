@@ -200,7 +200,9 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
               )}
               <p className="text-xs text-slate-500 mt-0.5">@{profile?.username}</p>
               <span className={`inline-flex mt-2 items-center gap-1.5 text-xs font-bold border rounded-full px-2.5 py-1 ${ROLE_STYLE[profile?.role ?? 'member']}`}>
-                {profile?.role === 'superadmin' ? <KeyRound size={10} /> : profile?.role === 'admin' ? <Shield size={10} /> : <Swords size={10} />}
+                {profile?.role === 'superadmin' && <img src="/Super Admin.gif" alt="" className="w-4 h-4 object-contain" />}
+                {profile?.role === 'admin'      && <img src="/Admin.gif"       alt="" className="w-4 h-4 object-contain" />}
+                {(profile?.role === 'member' || !profile?.role) && <img src="/Member.gif" alt="" className="w-4 h-4 object-contain" />}
                 {ROLE_LABEL[profile?.role ?? 'member']}
               </span>
             </div>

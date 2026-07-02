@@ -186,7 +186,10 @@ const MemberCard: React.FC<MemberCardProps> = ({ p, idx, isMe, isAdmin, isSuperA
               <span className="text-sm font-bold text-slate-100 truncate">{p.display_name}</span>
               {isMe && <span className="text-[9px] text-indigo-400 bg-indigo-500/10 border border-indigo-500/20 rounded px-1.5 py-0.5 shrink-0">Bạn</span>}
               {/* Tag role luôn hiện, kể cả của mình */}
-              <span className={`text-[9px] font-bold border rounded px-1.5 py-0.5 shrink-0 ${ROLE_STYLE[p.role] ?? ROLE_STYLE.member}`}>
+              <span className={`flex items-center gap-1 text-[9px] font-bold border rounded px-1.5 py-0.5 shrink-0 ${ROLE_STYLE[p.role] ?? ROLE_STYLE.member}`}>
+                {p.role === 'superadmin' && <img src="/Super Admin.gif" alt="" className="w-3.5 h-3.5 object-contain" />}
+                {p.role === 'admin'      && <img src="/Admin.gif"       alt="" className="w-3.5 h-3.5 object-contain" />}
+                {p.role === 'member'     && <img src="/Member.gif"      alt="" className="w-3.5 h-3.5 object-contain" />}
                 {ROLE_LABEL[p.role] ?? p.role}
               </span>
             </div>

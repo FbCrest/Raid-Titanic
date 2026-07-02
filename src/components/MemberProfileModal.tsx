@@ -153,7 +153,9 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
               )}
               <p className="text-xs text-slate-500 mt-0.5">@{target.username}</p>
               <span className={`inline-flex mt-2 items-center gap-1.5 text-xs font-bold border rounded-full px-2.5 py-1 ${ROLE_STYLE[target.role] ?? ROLE_STYLE.member}`}>
-                {target.role === 'superadmin' ? <KeyRound size={10} /> : target.role === 'admin' ? <Shield size={10} /> : <Swords size={10} />}
+                {target.role === 'superadmin' && <img src="/Super Admin.gif" alt="" className="w-4 h-4 object-contain" />}
+                {target.role === 'admin'      && <img src="/Admin.gif"       alt="" className="w-4 h-4 object-contain" />}
+                {target.role === 'member'     && <img src="/Member.gif"      alt="" className="w-4 h-4 object-contain" />}
                 {ROLE_LABEL[target.role] ?? target.role}
               </span>
             </div>
