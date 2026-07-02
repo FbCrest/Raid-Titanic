@@ -67,3 +67,12 @@ export type DayAvailability = {
   note: string;
   updated_at: string;
 };
+
+export type RaidSettingsDB = {
+  id: 1;
+  title: string;
+  description: string;
+  banner_url: string | null;
+  updated_at: string;
+  updated_by: string | null;
+};

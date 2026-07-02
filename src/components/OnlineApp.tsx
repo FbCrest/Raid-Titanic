@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';import { motion, AnimatePresence } from 'motion/react';
+import React, { useState, useEffect, useCallback } from 'react';import { motion, AnimatePresence } from 'motion/react';
 import { Shield, LogOut, Camera, X, Plus, ChevronLeft, ChevronRight, ChevronDown, CalendarDays, Bell, Users, Pencil } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -56,6 +56,42 @@ export const OnlineApp: React.FC = () => {
   const [showProfile, setShowProfile] = useState(false);
   const [isScreenshotMode, setIsScreenshotMode] = useState(false);
   const [settings, setSettings] = useState<RaidSettings>(DEFAULT_SETTINGS);
+
+  // ── Load settings từ DB + realtime ──
+  const applyDBSettings = useCallback((row: { title: string; description: string; banner_url: string | null }) => {
+    setSettings(prev => ({
+      ...prev,
+      title: row.title,
+      description: row.description,
+      bannerUrl: row.banner_url,
+    }));
+  }, []);
+
+  useEffect(() => {
+    // Fetch initial
+    supabase.from('raid_settings').select('*').eq('id', 1).single()
+      .then(({ data }) => { if (data) applyDBSettings(data); });
+
+    // Realtime
+    const ch = supabase
+      .channel('raid-settings-rt')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'raid_settings', filter: 'id=eq.1' },
+        (payload) => { if (payload.new) applyDBSettings(payload.new as { title: string; description: string; banner_url: string | null }); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [applyDBSettings]);
+
+  // ── Lưu settings lên DB (chỉ admin) ──
+  const handleUpdateSettings = useCallback(async (next: RaidSettings) => {
+    setSettings(next);
+    if (!isAdmin) return;
+    await supabase.from('raid_settings').update({
+      title: next.title,
+      description: next.description,
+      banner_url: next.bannerUrl,
+      updated_by: profile?.id ?? null,
+    }).eq('id', 1);
+  }, [isAdmin, profile?.id]);
 
   useEffect(() => {
     if (isAdmin) ensureRecurringRaids();
@@ -236,7 +272,7 @@ export const OnlineApp: React.FC = () => {
 
         {/* Banner */}
         <motion.section id="banner-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.08 }}>
-          <BannerHeader settings={settings} onUpdateSettings={setSettings} isScreenshotMode={isScreenshotMode} />
+          <BannerHeader settings={settings} onUpdateSettings={handleUpdateSettings} isScreenshotMode={isScreenshotMode} />
         </motion.section>
 
         {/* Raid navigation bar — ẩn khi chụp ảnh */}

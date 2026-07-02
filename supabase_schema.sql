@@ -230,7 +230,43 @@ begin
   end if;
 end $$;
 
--- ── 7. SUPERADMIN ───────────────────────────────────────────
+-- ── 8. RAID SETTINGS (banner/title/description dùng chung) ──
+create table if not exists public.raid_settings (
+  id         integer primary key default 1 check (id = 1), -- chỉ 1 row
+  title      text not null default '🚢Tàu Titanic『镇海潮生』',
+  description text not null default 'Yêu cầu đồng đội có mặt đúng giờ, vào Discord để hoạt động nhóm được tốt hơn!',
+  banner_url text default null,
+  updated_at timestamptz default now(),
+  updated_by uuid references public.profiles(id) on delete set null
+);
+
+-- Seed row mặc định
+insert into public.raid_settings (id) values (1) on conflict (id) do nothing;
+
+alter table public.raid_settings enable row level security;
+
+drop policy if exists "settings_select" on public.raid_settings;
+drop policy if exists "settings_update_admin" on public.raid_settings;
+
+create policy "settings_select" on public.raid_settings for select using (true);
+create policy "settings_update_admin" on public.raid_settings for update
+  using (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin')));
+
+drop trigger if exists settings_updated_at on public.raid_settings;
+create trigger settings_updated_at before update on public.raid_settings
+  for each row execute function update_updated_at();
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'raid_settings'
+  ) then
+    alter publication supabase_realtime add table public.raid_settings;
+  end if;
+end $$;
+
+-- ── 9. SUPERADMIN ───────────────────────────────────────────
 -- Cập nhật constraint để cho phép role 'superadmin' và 'rejected'
 alter table public.profiles
   drop constraint if exists profiles_role_check;
