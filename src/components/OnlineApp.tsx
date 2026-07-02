@@ -370,7 +370,7 @@ const RaidNavBar: React.FC<RaidNavBarProps> = ({ selectedRaid, raids, selectedIn
               }
               <ChevronDown size={12} className="text-slate-500 shrink-0 group-hover:text-slate-300 transition-colors" />
             </div>
-            <p className="text-[10px] text-indigo-400/70 leading-tight">bấm để xem lịch raid</p>
+            <p className="text-[10px] text-slate-400/80 leading-tight">{raidDateLabel} • {selectedRaid.raid_time} <span className="text-indigo-400/70">— bấm để xem lịch raid</span></p>
           </div>
         ) : (
           <span className="text-sm text-slate-500">Chưa có raid — chọn hoặc tạo mới</span>

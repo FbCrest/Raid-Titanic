@@ -13,6 +13,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+body {
+  scrollbar-gutter: stable;
+}
+
 /* Fix Chrome autofill white background */
 input:-webkit-autofill,
 input:-webkit-autofill:hover,

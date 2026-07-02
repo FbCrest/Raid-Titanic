@@ -189,11 +189,30 @@ const SlotRow: React.FC<SlotRowProps> = ({
     if (isAdmin) {
       await onAdminUpdate(slot.id, { class_id: classId });
     } else if (canRegister) {
-      // Thành viên đăng ký slot trống — dùng tên profile
       await onRegister(slot.id, profile!.display_name, classId, profile!.id);
       setLocalName(profile!.display_name);
     } else if (isMySlot) {
       await onAdminUpdate(slot.id, { class_id: classId });
+    }
+    setSaving(false);
+  };
+
+  // Quick fill: điền tên + phái cùng lúc
+  const handleQuickFill = async (name: string, classId: string) => {
+    setSaving(true);
+    if (isAdmin) {
+      await onAdminUpdate(slot.id, {
+        member_name: name,
+        class_id: classId,
+        registered_by: slot.registered_by ?? null,
+      });
+      setLocalName(name);
+    } else if (canRegister) {
+      await onRegister(slot.id, name, classId, profile!.id);
+      setLocalName(name);
+    } else if (isMySlot) {
+      await onAdminUpdate(slot.id, { member_name: name, class_id: classId });
+      setLocalName(name);
     }
     setSaving(false);
   };
@@ -247,6 +266,7 @@ const SlotRow: React.FC<SlotRowProps> = ({
           onSelectClass={handleClassChange}
           disabled={isScreenshotMode || (!isAdmin && !canRegister && !isMySlot)}
           empty={isEmpty}
+          onQuickFill={interactive ? handleQuickFill : undefined}
         />
       </div>
 

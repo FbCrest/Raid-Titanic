@@ -10,9 +10,10 @@ interface ClassSelectorProps {
   id: string;
   disabled?: boolean;
   empty?: boolean;
+  onQuickFill?: (name: string, classId: string) => void;
 }
 
-export const ClassSelector: React.FC<ClassSelectorProps> = ({ selectedClassId, onSelectClass, id, disabled, empty }) => {
+export const ClassSelector: React.FC<ClassSelectorProps> = ({ selectedClassId, onSelectClass, id, disabled, empty, onQuickFill }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const selectedClass = getClassById(selectedClassId);
@@ -58,6 +59,7 @@ export const ClassSelector: React.FC<ClassSelectorProps> = ({ selectedClassId, o
         onClose={() => setIsModalOpen(false)}
         onSelectClass={onSelectClass}
         selectedClassId={selectedClassId}
+        onQuickFill={onQuickFill}
       />
     </div>
   );
