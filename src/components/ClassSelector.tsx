@@ -28,7 +28,6 @@ export const ClassSelector: React.FC<ClassSelectorProps> = ({ selectedClassId, o
         whileTap={!disabled ? { scale: 0.94 } : undefined}
         onClick={() => { if (!disabled) setIsModalOpen(true); }}
         disabled={disabled}
-        title={selectedClass?.name ?? 'Slot trống'}
         className={`tooltip flex w-full items-center justify-center rounded-xl p-1.5 transition-all duration-200 ${
           disabled ? 'select-none opacity-60 cursor-default' : 'cursor-pointer hover:scale-110 active:scale-95'
         }`}

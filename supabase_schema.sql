@@ -243,6 +243,11 @@ create table if not exists public.raid_settings (
 -- Seed row mặc định
 insert into public.raid_settings (id) values (1) on conflict (id) do nothing;
 
+-- Migration: thêm font size settings
+alter table public.raid_settings add column if not exists date_time_font_size numeric default 0;
+alter table public.raid_settings add column if not exists desc_font_size      numeric default 0;
+alter table public.raid_settings add column if not exists slot_font_size      numeric default 0;
+
 alter table public.raid_settings enable row level security;
 
 drop policy if exists "settings_select" on public.raid_settings;

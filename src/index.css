@@ -98,10 +98,11 @@ body {
 
 /* ── Glass base ── */
 .glass {
-  background: rgb(255 255 255 / 0.045);
+  background: rgb(8 10 20 / 0.38);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid rgb(255 255 255 / 0.09);
+  isolation: isolate;
 }
 
 .glass-strong {
@@ -510,10 +511,17 @@ input[type="number"] { -moz-appearance: textfield; }
 
 /* ── Banner overlay elements — dark enough for Vercel/production ── */
 .glass-banner {
-  background: rgb(5 7 14 / 0.42);
+  background: rgb(5 7 14 / 0.38);
   backdrop-filter: blur(16px) saturate(160%);
   -webkit-backdrop-filter: blur(16px) saturate(160%);
   border: 1px solid rgb(255 255 255 / 0.12);
+  isolation: isolate;
+}
+
+/* ── Popover animation ── */
+@keyframes popover-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.95); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 /* ── Marquee scroll on hover ── */

@@ -22,4 +22,7 @@ export interface RaidSettings {
   dateTime: string;
   bannerUrl: string | null;
   description: string;
+  dateTimeFontSize?: number; // extra rem added to base size for date/time line (default 0)
+  descFontSize?: number;     // extra rem added to base size for description line (default 0)
+  slotFontSize?: number;     // extra rem added to base size for slot member names (default 0)
 }

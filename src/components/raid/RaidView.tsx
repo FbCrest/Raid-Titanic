@@ -6,15 +6,17 @@ import { useRaidSlots } from '../../hooks/useRaidSlots';
 import { useAuth } from '../../context/AuthContext';
 import { getClassById } from '../../data/classes';
 import { ClassSelector } from '../ClassSelector';
+import { RaidSettings } from '../../types';
 
 interface RaidViewProps {
   raid: Raid;
   isScreenshotMode?: boolean;
+  settings?: RaidSettings;
 }
 
 const DOW_FULL = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
 
-export const RaidView: React.FC<RaidViewProps> = ({ raid, isScreenshotMode = false }) => {
+export const RaidView: React.FC<RaidViewProps> = ({ raid, isScreenshotMode = false, settings }) => {
   const { slots, loading, registerSlot, unregisterSlot, adminUpdateSlot, adminClearSlot } = useRaidSlots(raid.id);
   const { profile, isAdmin } = useAuth();
 
@@ -24,20 +26,19 @@ export const RaidView: React.FC<RaidViewProps> = ({ raid, isScreenshotMode = fal
   const raidDate = new Date(raid.raid_date + 'T00:00:00');
   const dateLabel = `${DOW_FULL[raidDate.getDay()]}, ${String(raidDate.getDate()).padStart(2, '0')}/${String(raidDate.getMonth() + 1).padStart(2, '0')}`;
   const filledCount = slots.filter((s) => s.member_name.trim()).length;
+  const slotFontSize = 1.125 + (settings?.slotFontSize ?? 0); // base = text-lg = 1.125rem
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Raid header — ẩn luôn vì đã có nav bar ở trên */}
-
       {loading ? (
         <div className="flex items-center justify-center py-16">
           <span className="h-6 w-6 rounded-full border-2 border-indigo-400/30 border-t-indigo-400 animate-spin" />
         </div>
       ) : (
         <div className={`grid grid-cols-2 ${isScreenshotMode ? 'gap-1' : 'gap-3'}`}>
-          <TeamPanel teamNumber={1} slots={team1} raid={raid} profile={profile} isAdmin={isAdmin} isScreenshotMode={isScreenshotMode}
+          <TeamPanel teamNumber={1} slots={team1} raid={raid} profile={profile} isAdmin={isAdmin} isScreenshotMode={isScreenshotMode} slotFontSize={slotFontSize}
             onRegister={registerSlot} onUnregister={unregisterSlot} onAdminUpdate={adminUpdateSlot} onAdminClear={adminClearSlot} />
-          <TeamPanel teamNumber={2} slots={team2} raid={raid} profile={profile} isAdmin={isAdmin} isScreenshotMode={isScreenshotMode}
+          <TeamPanel teamNumber={2} slots={team2} raid={raid} profile={profile} isAdmin={isAdmin} isScreenshotMode={isScreenshotMode} slotFontSize={slotFontSize}
             onRegister={registerSlot} onUnregister={unregisterSlot} onAdminUpdate={adminUpdateSlot} onAdminClear={adminClearSlot} />
         </div>
       )}
@@ -54,6 +55,7 @@ interface TeamPanelProps {
   profile: ReturnType<typeof useAuth>['profile'];
   isAdmin: boolean;
   isScreenshotMode?: boolean;
+  slotFontSize?: number;
   onRegister: (slotId: string, name: string, classId: string, userId: string) => Promise<any>;
   onUnregister: (slotId: string, userId: string) => Promise<any>;
   onAdminUpdate: (slotId: string, updates: Partial<Pick<RaidSlot, 'member_name' | 'class_id' | 'registered_by'>>) => Promise<any>;
@@ -68,7 +70,7 @@ const TEAM_STYLES = {
 } as const;
 
 const TeamPanel: React.FC<TeamPanelProps> = ({
-  teamNumber, slots, raid, profile, isAdmin, isScreenshotMode = false,
+  teamNumber, slots, raid, profile, isAdmin, isScreenshotMode = false, slotFontSize,
   onRegister, onUnregister, onAdminUpdate, onAdminClear,
 }) => {
   const styles = TEAM_STYLES[teamNumber];
@@ -117,6 +119,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
             profile={profile}
             isAdmin={isAdmin}
             isScreenshotMode={isScreenshotMode}
+            slotFontSize={slotFontSize}
             onRegister={onRegister}
             onUnregister={onUnregister}
             onAdminUpdate={onAdminUpdate}
@@ -137,6 +140,7 @@ interface SlotRowProps {
   profile: ReturnType<typeof useAuth>['profile'];
   isAdmin: boolean;
   isScreenshotMode?: boolean;
+  slotFontSize?: number;
   onRegister: (slotId: string, name: string, classId: string, userId: string) => Promise<any>;
   onUnregister: (slotId: string, userId: string) => Promise<any>;
   onAdminUpdate: (slotId: string, updates: Partial<Pick<RaidSlot, 'member_name' | 'class_id' | 'registered_by'>>) => Promise<any>;
@@ -144,7 +148,7 @@ interface SlotRowProps {
 }
 
 const SlotRow: React.FC<SlotRowProps> = ({
-  slot, index, raid, profile, isAdmin, isScreenshotMode = false,
+  slot, index, raid, profile, isAdmin, isScreenshotMode = false, slotFontSize = 1.125,
   onRegister, onUnregister, onAdminUpdate, onAdminClear,
 }) => {
   const classData = getClassById(slot.class_id);
@@ -253,7 +257,7 @@ const SlotRow: React.FC<SlotRowProps> = ({
       initial={{ opacity: 0, x: -8 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.3, delay: index * 0.04, ease: 'easeOut' }}
-      className={`group flex items-center gap-2.5 rounded-xl border transition-all duration-150 ${
+      className={`group flex items-center gap-1.5 rounded-xl border transition-all duration-150 ${
         isScreenshotMode ? 'p-1.5' : 'p-2 md:p-2.5'
       }`}
       style={slotStyle}
@@ -271,11 +275,11 @@ const SlotRow: React.FC<SlotRowProps> = ({
       </div>
 
       {/* Name input / display */}
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 flex items-center">
         {isScreenshotMode ? (
           <div
-            className="select-none px-2 py-1 text-lg"
-            style={{ color: isFilled ? `${hex}ee` : `${hex}55`, fontFamily: "'Nunito', sans-serif", fontWeight: 900 }}
+            className="select-none px-1"
+            style={{ color: isFilled ? `${hex}ee` : `${hex}55`, fontFamily: "'Nunito', sans-serif", fontWeight: 900, fontSize: `${slotFontSize}rem` }}
           >
             {slot.member_name || '—'}
           </div>
@@ -288,15 +292,15 @@ const SlotRow: React.FC<SlotRowProps> = ({
             onBlur={handleNameSave}
             onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
             placeholder="Tên người chơi..."
-            className="slot-name-input w-full bg-transparent px-2.5 py-1.5 text-lg outline-none"
-            style={{ color: localName ? `${hex}ee` : `rgba(255,255,255,0.25)`, caretColor: hex, fontFamily: "'Nunito', sans-serif", fontWeight: 900 }}
+            className="slot-name-input w-full bg-transparent px-1 py-0 outline-none leading-none"
+            style={{ color: localName ? `${hex}ee` : `rgba(255,255,255,0.25)`, caretColor: hex, fontFamily: "'Nunito', sans-serif", fontWeight: 900, fontSize: `${slotFontSize}rem` }}
           />
         ) : (
           <div
-            className="px-2.5 py-1.5 text-lg"
+            className="px-1 leading-none"
             style={isEmpty
-              ? { color: 'rgba(255,255,255,0.2)', fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontStyle: 'italic' }
-              : { color: `${hex}ee`, fontFamily: "'Nunito', sans-serif", fontWeight: 900 }
+              ? { color: 'rgba(255,255,255,0.2)', fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontStyle: 'italic', fontSize: `${slotFontSize}rem` }
+              : { color: `${hex}ee`, fontFamily: "'Nunito', sans-serif", fontWeight: 900, fontSize: `${slotFontSize}rem` }
             }
           >
             {slot.member_name || (canRegister ? 'Chọn phái để đăng ký...' : 'Slot trống')}

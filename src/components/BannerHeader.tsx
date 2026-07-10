@@ -1,6 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { Edit2, Upload, RotateCcw, Check, FileText } from 'lucide-react';
+import { Edit2, Upload, RotateCcw, Check, FileText, Settings } from 'lucide-react';
 import { RaidSettings } from '../types';
 import { DateTimePicker } from './DateTimePicker';
 
@@ -17,6 +18,55 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDesc, setIsEditingDesc] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [showFontSettings, setShowFontSettings] = useState(false);
+  const popoverRef = useRef<HTMLDivElement>(null);
+  const fontBtnRef = useRef<HTMLButtonElement>(null);
+  const [popoverPos, setPopoverPos] = useState({ top: 0, right: 0 });
+
+  const dateTimeFontDelta = settings.dateTimeFontSize ?? 0;
+  const descFontDelta = settings.descFontSize ?? 0;
+
+  // Close popover when clicking outside — dùng setTimeout để tránh race với click event
+  useEffect(() => {
+    console.log('[FontSettings] useEffect, showFontSettings:', showFontSettings);
+    if (!showFontSettings) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as Node;
+      const insideBtn = fontBtnRef.current?.contains(target);
+      const insidePopover = popoverRef.current?.contains(target);
+      console.log('[FontSettings] click — insideBtn:', insideBtn, 'insidePopover:', insidePopover, 'popoverRef:', popoverRef.current);
+      if (!insideBtn && !insidePopover) {
+        console.log('[FontSettings] closing');
+        setShowFontSettings(false);
+      }
+    };
+    const timer = setTimeout(() => {
+      console.log('[FontSettings] adding click listener');
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
+    return () => {
+      console.log('[FontSettings] cleanup');
+      clearTimeout(timer);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showFontSettings]);
+
+  const handleToggleFontSettings = () => {
+    console.log('[FontSettings] button clicked, prev:', showFontSettings);
+    setShowFontSettings((prev) => {
+      console.log('[FontSettings] setting to:', !prev);
+      if (!prev && fontBtnRef.current) {
+        const rect = fontBtnRef.current.getBoundingClientRect();
+        const popoverWidth = 224; // w-56 = 14rem = 224px
+        setPopoverPos({
+          top: rect.bottom + 8,
+          right: window.innerWidth - rect.left - rect.width / 2 - popoverWidth / 2,
+        });
+        console.log('[FontSettings] pos:', { top: rect.bottom + 8, right: window.innerWidth - rect.left - rect.width / 2 - popoverWidth / 2 });
+      }
+      return !prev;
+    });
+  };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -118,9 +168,10 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
   return (
     <div
       id="raid-banner-header"
-      className={`relative w-full overflow-hidden rounded-3xl transition-all duration-300 card-soft ${
+      className={`relative w-full rounded-3xl transition-all duration-300 card-soft ${
         dragActive ? 'ring-2 ring-indigo-400/50 ring-offset-2 ring-offset-[#080a10] scale-[0.995] cursor-copy' : ''
       }`}
+      style={{ clipPath: 'inset(0 round 1.5rem)' }}
       onDragEnter={!isScreenshotMode ? handleDrag : undefined}
       onDragOver={!isScreenshotMode ? handleDrag : undefined}
       onDragLeave={!isScreenshotMode ? handleDrag : undefined}
@@ -143,6 +194,111 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
       {/* Banner Controls */}
       {!isScreenshotMode && !readOnly && (
         <div className="absolute top-4 right-4 z-20 flex gap-2">
+          {/* Font Size Settings */}
+          <div className="relative">
+            <button
+              ref={fontBtnRef}
+              onClick={handleToggleFontSettings}
+              className={`glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:glass-neon-border cursor-pointer ${showFontSettings ? 'glass-neon-border' : ''}`}
+              title="Cài đặt cỡ chữ"
+            >
+              <Settings size={13} />
+              <span>Cỡ chữ</span>
+            </button>
+
+            {createPortal(
+              <AnimatePresence>
+                {showFontSettings && (
+                  <motion.div
+                    ref={popoverRef}
+                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
+                    transition={{ duration: 0.14, ease: 'easeOut' }}
+                    className="fixed z-[9999] w-56 rounded-2xl p-4 shadow-2xl shadow-black/60"
+                    style={{
+                      top: popoverPos.top,
+                      right: popoverPos.right,
+                      background: 'rgb(8 10 20 / 0.38)',
+                      backdropFilter: 'blur(20px) saturate(180%)',
+                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                      border: '1px solid rgb(255 255 255 / 0.12)',
+                    }}
+                  >
+                  <p className="mb-3 text-xs font-semibold text-white/60 uppercase tracking-wider">Cỡ chữ</p>
+
+                {/* Row 1: Ngày giờ */}
+                <div className="mb-3">
+                  <p className="mb-1.5 text-xs text-white/50">🕐 Ngày giờ</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onUpdateSettings({ ...settings, dateTimeFontSize: Math.max(-0.2, parseFloat((dateTimeFontDelta - 0.1).toFixed(1))) })}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
+                    >−</button>
+                    <div className="flex-1 text-center">
+                      <span className="text-sm font-semibold text-white">
+                        {dateTimeFontDelta === 0 ? 'Mặc định' : dateTimeFontDelta > 0 ? `+${Math.round(dateTimeFontDelta * 100)}%` : `${Math.round(dateTimeFontDelta * 100)}%`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => onUpdateSettings({ ...settings, dateTimeFontSize: Math.min(1.5, parseFloat((dateTimeFontDelta + 0.1).toFixed(1))) })}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
+                    >+</button>
+                  </div>
+                </div>
+
+                {/* Row 2: Ghi chú */}
+                <div className="mb-3">
+                  <p className="mb-1.5 text-xs text-white/50">📝 Ghi chú</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onUpdateSettings({ ...settings, descFontSize: Math.max(-0.2, parseFloat((descFontDelta - 0.1).toFixed(1))) })}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
+                    >−</button>
+                    <div className="flex-1 text-center">
+                      <span className="text-sm font-semibold text-white">
+                        {descFontDelta === 0 ? 'Mặc định' : descFontDelta > 0 ? `+${Math.round(descFontDelta * 100)}%` : `${Math.round(descFontDelta * 100)}%`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => onUpdateSettings({ ...settings, descFontSize: Math.min(1.5, parseFloat((descFontDelta + 0.1).toFixed(1))) })}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
+                    >+</button>
+                  </div>
+                </div>
+
+                {/* Row 3: Tên thành viên */}
+                <div className="mb-3">
+                  <p className="mb-1.5 text-xs text-white/50">👤 Tên thành viên</p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => onUpdateSettings({ ...settings, slotFontSize: Math.max(-0.5, parseFloat(((settings.slotFontSize ?? 0) - 0.1).toFixed(1))) })}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
+                    >−</button>
+                    <div className="flex-1 text-center">
+                      <span className="text-sm font-semibold text-white">
+                        {(settings.slotFontSize ?? 0) === 0 ? 'Mặc định' : (settings.slotFontSize ?? 0) > 0 ? `+${Math.round((settings.slotFontSize ?? 0) * 100)}%` : `${Math.round((settings.slotFontSize ?? 0) * 100)}%`}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => onUpdateSettings({ ...settings, slotFontSize: Math.min(1.5, parseFloat(((settings.slotFontSize ?? 0) + 0.1).toFixed(1))) })}
+                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
+                    >+</button>
+                  </div>
+                </div>
+
+                  <button
+                    onClick={() => onUpdateSettings({ ...settings, dateTimeFontSize: 0, descFontSize: 0, slotFontSize: 0 })}
+                    className="w-full rounded-xl bg-white/5 py-1.5 text-xs text-white/50 hover:bg-white/10 hover:text-white/80 transition"
+                  >
+                    Đặt lại tất cả
+                  </button>
+                </motion.div>
+                )}
+              </AnimatePresence>
+            , document.body)}
+          </div>
+
           <button
             id="btn-upload-banner"
             onClick={() => fileInputRef.current?.click()}
@@ -234,9 +390,12 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
         </div>
 
         {/* Date / Time */}
-        <div className={`glass-banner glass-neon-border inline-flex items-center justify-center rounded-2xl font-medium text-white transition-all ${
-          isScreenshotMode ? 'px-4 py-2 text-xs' : 'px-5 py-2.5 text-xs md:text-sm'
-        }`}>
+        <div
+          className={`glass-banner glass-neon-border inline-flex items-center justify-center rounded-2xl font-medium text-white transition-all ${
+            isScreenshotMode ? 'px-4 py-2 text-xs' : 'px-5 py-2.5 text-xs md:text-sm'
+          }`}
+          style={dateTimeFontDelta !== 0 ? { fontSize: `${(isScreenshotMode ? 0.75 : 0.875) + dateTimeFontDelta}rem` } : undefined}
+        >
           <DateTimePicker
             value={settings.dateTime}
             onChange={(display) => onUpdateSettings({ ...settings, dateTime: display })}
@@ -282,10 +441,11 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
               className={`group relative inline-flex max-w-xl items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs text-white/80 transition glass-banner cursor-edit ${
                 isScreenshotMode || readOnly ? 'pointer-events-none' : 'hover:glass-neon-border hover:text-white/95'
               }`}
+              style={descFontDelta !== 0 ? { fontSize: `${0.75 + descFontDelta}rem` } : undefined}
               title={isScreenshotMode ? undefined : "Click để chỉnh sửa ghi chú"}
             >
               <FileText size={11} className="shrink-0 text-white/50" />
-              <span className="text-center text-xs italic leading-snug">{settings.description || "Thêm ghi chú phó bản..."}</span>
+              <span className="text-center italic leading-snug">{settings.description || "Thêm ghi chú phó bản..."}</span>
               {!isScreenshotMode && (
                 <Edit2 size={9} className="shrink-0 opacity-0 transition group-hover:opacity-60" />
               )}

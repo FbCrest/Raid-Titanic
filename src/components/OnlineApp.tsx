@@ -58,12 +58,15 @@ export const OnlineApp: React.FC = () => {
   const [settings, setSettings] = useState<RaidSettings>(DEFAULT_SETTINGS);
 
   // ── Load settings từ DB + realtime ──
-  const applyDBSettings = useCallback((row: { title: string; description: string; banner_url: string | null }) => {
+  const applyDBSettings = useCallback((row: { title: string; description: string; banner_url: string | null; date_time_font_size?: number | null; desc_font_size?: number | null; slot_font_size?: number | null }) => {
     setSettings(prev => ({
       ...prev,
       title: row.title,
       description: row.description,
       bannerUrl: row.banner_url,
+      dateTimeFontSize: row.date_time_font_size ?? 0,
+      descFontSize: row.desc_font_size ?? 0,
+      slotFontSize: row.slot_font_size ?? 0,
     }));
   }, []);
 
@@ -89,6 +92,9 @@ export const OnlineApp: React.FC = () => {
       title: next.title,
       description: next.description,
       banner_url: next.bannerUrl,
+      date_time_font_size: next.dateTimeFontSize ?? 0,
+      desc_font_size: next.descFontSize ?? 0,
+      slot_font_size: next.slotFontSize ?? 0,
       updated_by: profile?.id ?? null,
     }).eq('id', 1);
   }, [isAdmin, profile?.id]);
@@ -300,7 +306,7 @@ export const OnlineApp: React.FC = () => {
           <AnimatePresence mode="sync">
             {selectedRaid ? (
               <motion.div key={selectedRaid.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }}>
-                <RaidView raid={selectedRaid} isScreenshotMode={isScreenshotMode} />
+                <RaidView raid={selectedRaid} isScreenshotMode={isScreenshotMode} settings={settings} />
               </motion.div>
             ) : (
               <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
