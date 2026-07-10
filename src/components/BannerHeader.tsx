@@ -166,12 +166,54 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
   const currentBanner = settings.bannerUrl || DEFAULT_BANNER;
 
   return (
+    <div id="raid-banner-header" className="relative w-full">
+      {/* Banner Controls — nằm ngoài overflow-hidden để backdrop-filter hoạt động */}
+      {!isScreenshotMode && !readOnly && (
+        <div className="absolute top-4 right-4 z-20 flex gap-2">
+          {/* Font Size Settings */}
+          <div className="relative">
+            <button
+              ref={fontBtnRef}
+              onClick={handleToggleFontSettings}
+              className={`glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:glass-neon-border cursor-pointer ${showFontSettings ? 'glass-neon-border' : ''}`}
+            >
+              <Settings size={13} />
+              <span>Cỡ chữ</span>
+            </button>
+          </div>
+
+          <button
+            id="btn-upload-banner"
+            onClick={() => fileInputRef.current?.click()}
+            className="glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:glass-neon-border cursor-pointer"
+          >
+            <Upload size={13} />
+            <span>Thay ảnh</span>
+          </button>
+          {settings.bannerUrl && (
+            <button
+              id="btn-reset-banner"
+              onClick={handleResetBanner}
+              className="glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:glass-neon-border cursor-pointer"
+            >
+              <RotateCcw size={13} />
+              <span>Mặc định</span>
+            </button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
+          />
+        </div>
+      )}
+
     <div
-      id="raid-banner-header"
-      className={`relative w-full rounded-3xl transition-all duration-300 card-soft ${
+      className={`relative w-full overflow-hidden rounded-3xl transition-all duration-300 card-soft ${
         dragActive ? 'ring-2 ring-indigo-400/50 ring-offset-2 ring-offset-[#080a10] scale-[0.995] cursor-copy' : ''
       }`}
-      style={{ clipPath: 'inset(0 round 1.5rem)' }}
       onDragEnter={!isScreenshotMode ? handleDrag : undefined}
       onDragOver={!isScreenshotMode ? handleDrag : undefined}
       onDragLeave={!isScreenshotMode ? handleDrag : undefined}
@@ -190,144 +232,6 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
         {/* Bottom vignette */}
         <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#080a10]/60 to-transparent" />
       </div>
-
-      {/* Banner Controls */}
-      {!isScreenshotMode && !readOnly && (
-        <div className="absolute top-4 right-4 z-20 flex gap-2">
-          {/* Font Size Settings */}
-          <div className="relative">
-            <button
-              ref={fontBtnRef}
-              onClick={handleToggleFontSettings}
-              className={`glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:glass-neon-border cursor-pointer ${showFontSettings ? 'glass-neon-border' : ''}`}
-              title="Cài đặt cỡ chữ"
-            >
-              <Settings size={13} />
-              <span>Cỡ chữ</span>
-            </button>
-
-            {createPortal(
-              <AnimatePresence>
-                {showFontSettings && (
-                  <motion.div
-                    ref={popoverRef}
-                    initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                    transition={{ duration: 0.14, ease: 'easeOut' }}
-                    className="fixed z-[9999] w-56 rounded-2xl p-4 shadow-2xl shadow-black/60"
-                    style={{
-                      top: popoverPos.top,
-                      right: popoverPos.right,
-                      background: 'rgb(8 10 20 / 0.38)',
-                      backdropFilter: 'blur(20px) saturate(180%)',
-                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                      border: '1px solid rgb(255 255 255 / 0.12)',
-                    }}
-                  >
-                  <p className="mb-3 text-xs font-semibold text-white/60 uppercase tracking-wider">Cỡ chữ</p>
-
-                {/* Row 1: Ngày giờ */}
-                <div className="mb-3">
-                  <p className="mb-1.5 text-xs text-white/50">🕐 Ngày giờ</p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onUpdateSettings({ ...settings, dateTimeFontSize: Math.max(-0.2, parseFloat((dateTimeFontDelta - 0.1).toFixed(1))) })}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
-                    >−</button>
-                    <div className="flex-1 text-center">
-                      <span className="text-sm font-semibold text-white">
-                        {dateTimeFontDelta === 0 ? 'Mặc định' : dateTimeFontDelta > 0 ? `+${Math.round(dateTimeFontDelta * 100)}%` : `${Math.round(dateTimeFontDelta * 100)}%`}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => onUpdateSettings({ ...settings, dateTimeFontSize: Math.min(1.5, parseFloat((dateTimeFontDelta + 0.1).toFixed(1))) })}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
-                    >+</button>
-                  </div>
-                </div>
-
-                {/* Row 2: Ghi chú */}
-                <div className="mb-3">
-                  <p className="mb-1.5 text-xs text-white/50">📝 Ghi chú</p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onUpdateSettings({ ...settings, descFontSize: Math.max(-0.2, parseFloat((descFontDelta - 0.1).toFixed(1))) })}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
-                    >−</button>
-                    <div className="flex-1 text-center">
-                      <span className="text-sm font-semibold text-white">
-                        {descFontDelta === 0 ? 'Mặc định' : descFontDelta > 0 ? `+${Math.round(descFontDelta * 100)}%` : `${Math.round(descFontDelta * 100)}%`}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => onUpdateSettings({ ...settings, descFontSize: Math.min(1.5, parseFloat((descFontDelta + 0.1).toFixed(1))) })}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
-                    >+</button>
-                  </div>
-                </div>
-
-                {/* Row 3: Tên thành viên */}
-                <div className="mb-3">
-                  <p className="mb-1.5 text-xs text-white/50">👤 Tên thành viên</p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => onUpdateSettings({ ...settings, slotFontSize: Math.max(-0.5, parseFloat(((settings.slotFontSize ?? 0) - 0.1).toFixed(1))) })}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
-                    >−</button>
-                    <div className="flex-1 text-center">
-                      <span className="text-sm font-semibold text-white">
-                        {(settings.slotFontSize ?? 0) === 0 ? 'Mặc định' : (settings.slotFontSize ?? 0) > 0 ? `+${Math.round((settings.slotFontSize ?? 0) * 100)}%` : `${Math.round((settings.slotFontSize ?? 0) * 100)}%`}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => onUpdateSettings({ ...settings, slotFontSize: Math.min(1.5, parseFloat(((settings.slotFontSize ?? 0) + 0.1).toFixed(1))) })}
-                      className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold"
-                    >+</button>
-                  </div>
-                </div>
-
-                  <button
-                    onClick={() => onUpdateSettings({ ...settings, dateTimeFontSize: 0, descFontSize: 0, slotFontSize: 0 })}
-                    className="w-full rounded-xl bg-white/5 py-1.5 text-xs text-white/50 hover:bg-white/10 hover:text-white/80 transition"
-                  >
-                    Đặt lại tất cả
-                  </button>
-                </motion.div>
-                )}
-              </AnimatePresence>
-            , document.body)}
-          </div>
-
-          <button
-            id="btn-upload-banner"
-            onClick={() => fileInputRef.current?.click()}
-            className="glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:glass-neon-border cursor-pointer"
-            title="Tải ảnh máy tính lên"
-          >
-            <Upload size={13} />
-            <span>Thay ảnh</span>
-          </button>
-          {settings.bannerUrl && (
-            <button
-              id="btn-reset-banner"
-              onClick={handleResetBanner}
-              className="glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:glass-neon-border cursor-pointer"
-              title="Khôi phục ảnh mặc định"
-            >
-              <RotateCcw size={13} />
-              <span>Mặc định</span>
-            </button>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-        </div>
-      )}
 
       {/* Main Content */}
       <div className={`relative z-10 flex flex-col items-center px-6 md:px-10 text-center transition-all duration-300 ${
@@ -477,6 +381,88 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
           </motion.div>
         )}
       </AnimatePresence>
+    </div>
+
+      {/* Font Settings Portal — outside overflow-hidden banner */}
+      {createPortal(
+        <AnimatePresence>
+          {showFontSettings && (
+            <motion.div
+              ref={popoverRef}
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ duration: 0.14, ease: 'easeOut' }}
+              className="fixed z-[9999] w-56 rounded-2xl p-4 shadow-2xl shadow-black/60"
+              style={{
+                top: popoverPos.top,
+                right: popoverPos.right,
+                background: 'rgb(8 10 20 / 0.38)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                border: '1px solid rgb(255 255 255 / 0.12)',
+              }}
+            >
+              <p className="mb-3 text-xs font-semibold text-white/60 uppercase tracking-wider">Cỡ chữ</p>
+
+              {/* Row 1: Ngày giờ */}
+              <div className="mb-3">
+                <p className="mb-1.5 text-xs text-white/50">🕐 Ngày giờ</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => onUpdateSettings({ ...settings, dateTimeFontSize: Math.max(-0.2, parseFloat((dateTimeFontDelta - 0.1).toFixed(1))) })}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold">−</button>
+                  <div className="flex-1 text-center">
+                    <span className="text-sm font-semibold text-white">
+                      {dateTimeFontDelta === 0 ? 'Mặc định' : dateTimeFontDelta > 0 ? `+${Math.round(dateTimeFontDelta * 100)}%` : `${Math.round(dateTimeFontDelta * 100)}%`}
+                    </span>
+                  </div>
+                  <button onClick={() => onUpdateSettings({ ...settings, dateTimeFontSize: Math.min(1.5, parseFloat((dateTimeFontDelta + 0.1).toFixed(1))) })}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold">+</button>
+                </div>
+              </div>
+
+              {/* Row 2: Ghi chú */}
+              <div className="mb-3">
+                <p className="mb-1.5 text-xs text-white/50">📝 Ghi chú</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => onUpdateSettings({ ...settings, descFontSize: Math.max(-0.2, parseFloat((descFontDelta - 0.1).toFixed(1))) })}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold">−</button>
+                  <div className="flex-1 text-center">
+                    <span className="text-sm font-semibold text-white">
+                      {descFontDelta === 0 ? 'Mặc định' : descFontDelta > 0 ? `+${Math.round(descFontDelta * 100)}%` : `${Math.round(descFontDelta * 100)}%`}
+                    </span>
+                  </div>
+                  <button onClick={() => onUpdateSettings({ ...settings, descFontSize: Math.min(1.5, parseFloat((descFontDelta + 0.1).toFixed(1))) })}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold">+</button>
+                </div>
+              </div>
+
+              {/* Row 3: Tên thành viên */}
+              <div className="mb-3">
+                <p className="mb-1.5 text-xs text-white/50">👤 Tên thành viên</p>
+                <div className="flex items-center gap-2">
+                  <button onClick={() => onUpdateSettings({ ...settings, slotFontSize: Math.max(-0.5, parseFloat(((settings.slotFontSize ?? 0) - 0.1).toFixed(1))) })}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold">−</button>
+                  <div className="flex-1 text-center">
+                    <span className="text-sm font-semibold text-white">
+                      {(settings.slotFontSize ?? 0) === 0 ? 'Mặc định' : (settings.slotFontSize ?? 0) > 0 ? `+${Math.round((settings.slotFontSize ?? 0) * 100)}%` : `${Math.round((settings.slotFontSize ?? 0) * 100)}%`}
+                    </span>
+                  </div>
+                  <button onClick={() => onUpdateSettings({ ...settings, slotFontSize: Math.min(1.5, parseFloat(((settings.slotFontSize ?? 0) + 0.1).toFixed(1))) })}
+                    className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white hover:bg-white/20 transition font-bold">+</button>
+                </div>
+              </div>
+
+              <button
+                onClick={() => onUpdateSettings({ ...settings, dateTimeFontSize: 0, descFontSize: 0, slotFontSize: 0 })}
+                className="w-full rounded-xl bg-white/5 py-1.5 text-xs text-white/50 hover:bg-white/10 hover:text-white/80 transition"
+              >
+                Đặt lại tất cả
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      , document.body)}
     </div>
   );
 };
