@@ -364,7 +364,7 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
                 ...glassStyle,
                 ...(descFontDelta !== 0 ? { fontSize: `${0.75 + descFontDelta}rem` } : {}),
               }}
-              title={isScreenshotMode ? undefined : "Click để chỉnh sửa ghi chú"}
+              title={undefined}
             >
               <FileText size={11} className="shrink-0 text-white/50" />
               <span className="text-center italic leading-snug">{settings.description || "Thêm ghi chú phó bản..."}</span>

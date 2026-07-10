@@ -89,9 +89,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({
         <div className="flex items-center gap-2.5">
           <div className="relative flex items-center justify-center">
             <div className={`h-2.5 w-2.5 rounded-full ${styles.dot}`} />
-            {filled === slots.length && slots.length > 0 && (
-              <div className={`absolute h-2.5 w-2.5 rounded-full ${styles.dot} animate-ping-subtle opacity-60`} />
-            )}
+            <div className={`absolute h-2.5 w-2.5 rounded-full ${styles.dot} animate-ping-subtle opacity-60`} />
           </div>
           <span className={`text-sm font-bold tracking-wide ${styles.accent}`}>Đội {teamNumber}</span>
         </div>

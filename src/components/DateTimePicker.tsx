@@ -86,10 +86,10 @@ export const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange,
         ref={triggerRef}
         type="button"
         onClick={() => handleOpen()}
-        className={`group flex items-center gap-2 transition select-none ${
+        className={`group flex items-center justify-center gap-2 transition select-none ${
           isScreenshotMode ? 'pointer-events-none cursor-default' : 'cursor-pointer hover:text-indigo-100'
         }`}
-        title={isScreenshotMode ? undefined : 'Chọn ngày giờ'}
+        title={undefined}
       >
         <CalendarDays size={14} className="shrink-0 text-indigo-200" />
         <span>{value}</span>
