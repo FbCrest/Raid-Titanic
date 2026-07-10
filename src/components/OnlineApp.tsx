@@ -464,7 +464,18 @@ export const OnlineApp: React.FC = () => {
               <motion.span className="inline-block" animate={{ scale: [1, 1.4, 1] }} transition={{ duration: 1.3, repeat: Infinity }}>💔</motion.span>
             </span>
             <span className="hidden text-white/15 sm:inline">|</span>
-            <span className="text-xs text-slate-600">Tạo bởi <motion.span className="font-semibold" style={{ color: '#818cf8' }} animate={{ opacity: [0.6, 1, 0.6] }} transition={{ duration: 3, repeat: Infinity }}>Mèo.Đi.Bụi</motion.span> © 2025</span>
+            <span className="text-xs text-slate-600">Tạo bởi <motion.span
+              className="font-semibold"
+              style={{
+                background: 'linear-gradient(90deg, #818cf8, #a78bfa, #38bdf8, #818cf8)',
+                backgroundSize: '200% auto',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text',
+              }}
+              animate={{ backgroundPosition: ['0% center', '200% center'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            >Mèo.Đi.Bụi</motion.span> © 2025</span>
           </div>
         </footer>
       )}
