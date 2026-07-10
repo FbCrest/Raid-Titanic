@@ -165,6 +165,15 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
 
   const currentBanner = settings.bannerUrl || DEFAULT_BANNER;
 
+  // Inline style cho glass effect — dùng inline thay vì CSS class để đảm bảo
+  // backdrop-filter hoạt động trên Vercel/production (CSS class bị block bởi stacking context)
+  const glassStyle: React.CSSProperties = {
+    background: 'rgb(8 10 20 / 0.38)',
+    backdropFilter: 'blur(16px) saturate(160%)',
+    WebkitBackdropFilter: 'blur(16px) saturate(160%)',
+    border: '1px solid rgb(255 255 255 / 0.09)',
+  };
+
   return (
     <div id="raid-banner-header" className="relative w-full">
       {/* Banner Controls — nằm ngoài overflow-hidden để backdrop-filter hoạt động */}
@@ -175,7 +184,8 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
             <button
               ref={fontBtnRef}
               onClick={handleToggleFontSettings}
-              className={`glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:glass-neon-border cursor-pointer ${showFontSettings ? 'glass-neon-border' : ''}`}
+              className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-200 transition cursor-pointer ${showFontSettings ? 'ring-1 ring-indigo-400/40' : ''}`}
+              style={glassStyle}
             >
               <Settings size={13} />
               <span>Cỡ chữ</span>
@@ -185,7 +195,8 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
           <button
             id="btn-upload-banner"
             onClick={() => fileInputRef.current?.click()}
-            className="glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:glass-neon-border cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-slate-200 transition cursor-pointer"
+            style={glassStyle}
           >
             <Upload size={13} />
             <span>Thay ảnh</span>
@@ -194,7 +205,8 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
             <button
               id="btn-reset-banner"
               onClick={handleResetBanner}
-              className="glass flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-rose-300 transition hover:glass-neon-border cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl px-3 py-1.5 text-xs font-medium text-rose-300 transition cursor-pointer"
+              style={glassStyle}
             >
               <RotateCcw size={13} />
               <span>Mặc định</span>
@@ -295,10 +307,13 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
 
         {/* Date / Time */}
         <div
-          className={`glass-banner glass-neon-border inline-flex items-center justify-center rounded-2xl font-medium text-white transition-all ${
+          className={`inline-flex items-center justify-center rounded-2xl font-medium text-white transition-all ${
             isScreenshotMode ? 'px-4 py-2 text-xs' : 'px-5 py-2.5 text-xs md:text-sm'
           }`}
-          style={dateTimeFontDelta !== 0 ? { fontSize: `${(isScreenshotMode ? 0.75 : 0.875) + dateTimeFontDelta}rem` } : undefined}
+          style={{
+            ...glassStyle,
+            ...(dateTimeFontDelta !== 0 ? { fontSize: `${(isScreenshotMode ? 0.75 : 0.875) + dateTimeFontDelta}rem` } : {}),
+          }}
         >
           <DateTimePicker
             value={settings.dateTime}
@@ -342,10 +357,13 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
                 setTempDesc(settings.description);
                 setIsEditingDesc(true);
               } : undefined}
-              className={`group relative inline-flex max-w-xl items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs text-white/80 transition glass-banner cursor-edit ${
-                isScreenshotMode || readOnly ? 'pointer-events-none' : 'hover:glass-neon-border hover:text-white/95'
+              className={`group relative inline-flex max-w-xl items-center justify-center gap-1.5 rounded-xl px-4 py-2 text-xs text-white/80 transition cursor-edit ${
+                isScreenshotMode || readOnly ? 'pointer-events-none' : 'hover:text-white/95'
               }`}
-              style={descFontDelta !== 0 ? { fontSize: `${0.75 + descFontDelta}rem` } : undefined}
+              style={{
+                ...glassStyle,
+                ...(descFontDelta !== 0 ? { fontSize: `${0.75 + descFontDelta}rem` } : {}),
+              }}
               title={isScreenshotMode ? undefined : "Click để chỉnh sửa ghi chú"}
             >
               <FileText size={11} className="shrink-0 text-white/50" />
