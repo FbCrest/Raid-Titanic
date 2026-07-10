@@ -1,5 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';import { motion, AnimatePresence } from 'motion/react';
-import { Shield, LogOut, Camera, X, Plus, ChevronLeft, ChevronRight, ChevronDown, CalendarDays, Bell, Users, Pencil } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { motion, AnimatePresence } from 'motion/react';
+import { Shield, LogOut, Camera, X, Plus, ChevronLeft, ChevronRight, ChevronDown, CalendarDays, Bell, Users, Pencil, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -27,6 +29,137 @@ const DEFAULT_SETTINGS: RaidSettings = {
 };
 
 const DOW_FULL = ['Chủ Nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+
+// ── World Clock ──────────────────────────────────────────────────────────────
+
+const ZONES = [
+  { label: 'Việt Nam', tz: 'Asia/Ho_Chi_Minh', flag: '🇻🇳' },
+  { label: 'Trung Quốc', tz: 'Asia/Shanghai', flag: '🇨🇳' },
+  { label: 'California', tz: 'America/Los_Angeles', flag: '🇺🇸' },
+];
+
+const WorldClock: React.FC = () => {
+  const [now, setNow] = useState(() => new Date());
+  const [open, setOpen] = useState(false);
+  const [popPos, setPopPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: MouseEvent) => {
+      if (!btnRef.current?.contains(e.target as Node) &&
+          !popRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const timer = setTimeout(() => document.addEventListener('click', handler), 0);
+    return () => { clearTimeout(timer); document.removeEventListener('click', handler); };
+  }, [open]);
+
+  const handleOpen = () => {
+    if (btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      const popWidth = 220;
+      setPopPos({
+        top: rect.bottom + 8,
+        left: rect.left + rect.width / 2 - popWidth / 2,
+      });
+    }
+    setOpen(true);
+  };
+
+  const getTime = (tz: string) => {
+    const t = now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: true });
+    return t.replace(/\s*(am|pm)/i, '');
+  };
+
+  const getDayLabel = (tz: string) => {
+    const h = getHour(tz);
+    if (h === 0) return { text: 'nửa đêm', icon: '🌙' };
+    if (h < 6) return { text: 'tối', icon: '🌙' };
+    if (h < 12) return { text: 'sáng', icon: '☀️' };
+    if (h === 12) return { text: 'trưa', icon: '☀️' };
+    if (h < 18) return { text: 'chiều', icon: '☀️' };
+    if (h < 22) return { text: 'tối', icon: '🌆' };
+    return { text: 'tối', icon: '🌙' };
+  };
+  const getDate = (tz: string) => now.toLocaleDateString('vi-VN', { timeZone: tz, weekday: 'short', day: '2-digit', month: '2-digit' });
+  const getHour = (tz: string) => parseInt(now.toLocaleTimeString('en-US', { timeZone: tz, hour: '2-digit', hour12: false }));
+
+  const timeColor = (_tz: string) => 'text-white';
+
+  const vnTime = getTime('Asia/Ho_Chi_Minh');
+
+  return (
+    <div className="relative flex items-center">
+      <button
+        ref={btnRef}
+        type="button"
+        onClick={() => open ? setOpen(false) : handleOpen()}
+        onMouseEnter={handleOpen}
+        onMouseLeave={() => setOpen(false)}
+        className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-white/[0.04] border border-white/[0.07] hover:bg-white/[0.07] transition-colors cursor-pointer"
+      >
+        <span className="text-[9px] font-bold text-slate-400 bg-white/[0.06] rounded px-1 py-0.5 leading-none">VN</span>
+        <span className="inline-flex items-center gap-1 text-xs font-bold text-white">
+          <span className="tabular-nums">{vnTime}</span>
+          <span className="text-[10px] font-semibold">{getDayLabel('Asia/Ho_Chi_Minh').text}</span>
+          <span className="text-xs leading-none">{getDayLabel('Asia/Ho_Chi_Minh').icon}</span>
+        </span>
+      </button>
+
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              ref={popRef}
+              initial={{ opacity: 0, y: -6, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.97 }}
+              transition={{ duration: 0.14, ease: 'easeOut' }}
+              onMouseEnter={handleOpen}
+              onMouseLeave={() => setOpen(false)}
+              className="fixed z-[9999] rounded-2xl p-3 shadow-2xl"
+              style={{
+                top: popPos.top,
+                left: popPos.left,
+                width: '220px',
+                background: 'rgb(8 10 20 / 0.38)',
+                backdropFilter: 'blur(20px) saturate(180%)',
+                WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+                border: '1px solid rgb(255 255 255 / 0.12)',
+              }}
+            >
+              <div className="flex flex-col gap-3">
+                {ZONES.map((zone) => (
+                  <div key={zone.tz} className="flex items-center gap-2.5">
+                    <span className="text-[10px] font-bold text-slate-500 bg-white/[0.06] rounded px-1.5 py-0.5 w-7 text-center shrink-0">
+                      {zone.label === 'Việt Nam' ? 'VN' : zone.label === 'Trung Quốc' ? 'CN' : 'US'}
+                    </span>
+                    <div>
+                      <p className="text-xs text-emerald-400 leading-none mb-1 font-medium">{zone.label} · {getDate(zone.tz)}</p>
+                      <p className="inline-flex items-center gap-1 text-base font-bold text-white">
+                        <span className="tabular-nums">{getTime(zone.tz)}</span>
+                        <span className="text-sm font-semibold">{getDayLabel(zone.tz).text}</span>
+                        <span className="text-sm leading-none">{getDayLabel(zone.tz).icon}</span>
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      , document.body)}
+    </div>
+  );
+};
 
 export const OnlineApp: React.FC = () => {
   const { profile, isAdmin, isSuperAdmin, signOut } = useAuth();
@@ -191,7 +324,8 @@ export const OnlineApp: React.FC = () => {
               <h1 className="text-base font-bold text-slate-100">🚢Tàu Titanic『镇海潮生』</h1>
             </div>
             <div className="flex items-center gap-2">
-              {/* Thành viên — tất cả đều thấy */}
+              {/* World Clock */}
+              <WorldClock />
               <motion.button
                 whileHover={{ scale: 1.03, backgroundColor: 'rgba(255,255,255,0.07)' }}
                 whileTap={{ scale: 0.97 }}
@@ -300,6 +434,9 @@ export const OnlineApp: React.FC = () => {
             />
           </motion.div>
         )}
+
+        {/* World Clock — ẩn khi chụp ảnh */}
+
 
         {/* Raid content */}
         <motion.section id="roster-section" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.15 }} style={{ minHeight: '400px' }}>
