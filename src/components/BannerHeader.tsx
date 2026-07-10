@@ -168,7 +168,7 @@ export const BannerHeader: React.FC<BannerHeaderProps> = ({ settings, onUpdateSe
   // Inline style cho glass effect — dùng inline thay vì CSS class để đảm bảo
   // backdrop-filter hoạt động trên Vercel/production (CSS class bị block bởi stacking context)
   const glassStyle: React.CSSProperties = {
-    background: 'rgb(5 7 14 / 0.28)',
+    background: 'rgb(5 7 14 / 0.15)',
     backdropFilter: 'blur(20px) saturate(180%)',
     WebkitBackdropFilter: 'blur(20px) saturate(180%)',
     border: '1px solid rgb(255 255 255 / 0.12)',
