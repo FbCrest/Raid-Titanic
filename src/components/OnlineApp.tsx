@@ -383,6 +383,12 @@ interface RaidNavBarProps {
 
 const RaidNavBar: React.FC<RaidNavBarProps> = ({ selectedRaid, raids, selectedIndex, isAdmin, onPrev, onNext, onOpenPicker, onOpenCreate, onToggleCancel, onScreenshot }) => {
   const isCancelled = selectedRaid?.status === 'cancelled';
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const raidDateLabel = selectedRaid ? (() => {
     const [y, m, d] = selectedRaid.raid_date.split('-').map(Number);
@@ -391,6 +397,22 @@ const RaidNavBar: React.FC<RaidNavBarProps> = ({ selectedRaid, raids, selectedIn
     const dd = String(d).padStart(2, '0');
     const mo = String(m).padStart(2, '0');
     return `${dow}, ${dd}/${mo}`;
+  })() : null;
+
+  const countdown = selectedRaid && !isCancelled ? (() => {
+    const [y, mo, d] = selectedRaid.raid_date.split('-').map(Number);
+    const [h, m] = selectedRaid.raid_time.split(':').map(Number);
+    const raidTime = new Date(y, mo - 1, d, h, m, 0);
+    const diffMs = raidTime.getTime() - now.getTime();
+    if (diffMs <= 0) return null;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays >= 2) return `còn ${diffDays} ngày`;
+    if (diffDays === 1) return `còn 1 ngày`;
+    if (diffHours >= 1) return `còn ${diffHours} giờ`;
+    if (diffMins >= 1) return `còn ${diffMins} phút`;
+    return 'sắp bắt đầu';
   })() : null;
 
   return (
@@ -415,7 +437,12 @@ const RaidNavBar: React.FC<RaidNavBarProps> = ({ selectedRaid, raids, selectedIn
               }
               <ChevronDown size={12} className="text-slate-500 shrink-0 group-hover:text-slate-300 transition-colors" />
             </div>
-            <p className="text-[10px] text-slate-400/80 leading-tight">{raidDateLabel} • {selectedRaid.raid_time} <span className="text-indigo-400/70">— bấm để xem lịch raid</span></p>
+            <p className="text-xs text-slate-400/80 leading-tight">
+              {raidDateLabel} • {selectedRaid.raid_time}
+              {countdown && <span className="ml-1.5 inline-flex items-center text-[10px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/25 rounded-full px-1.5 py-0.5">⏱ {countdown}</span>}
+              {!countdown && !isCancelled && <span className="ml-1.5 inline-flex items-center text-[10px] font-semibold text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-full px-1.5 py-0.5">⚔ Đang diễn ra</span>}
+              <span className="text-indigo-400/70"> — bấm để xem lịch raid</span>
+            </p>
           </div>
         ) : (
           <span className="text-sm text-slate-500">Chưa có raid — chọn hoặc tạo mới</span>
@@ -538,6 +565,31 @@ const RaidPickerItem: React.FC<{
   const [title, setTitle] = useState(raid.title);
   const [dateTimeDisplay, setDateTimeDisplay] = useState(buildDisplayValue(raid.raid_date, raid.raid_time));
   const [saving, setSaving] = useState(false);
+  const [now, setNow] = useState(() => new Date());
+
+  // Realtime countdown — cập nhật mỗi 30s
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Tính countdown đến raid
+  const getCountdown = () => {
+    const [y, mo, d] = raid.raid_date.split('-').map(Number);
+    const [h, m] = raid.raid_time.split(':').map(Number);
+    const raidTime = new Date(y, mo - 1, d, h, m, 0);
+    const diffMs = raidTime.getTime() - now.getTime();
+    if (diffMs <= 0) return null;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMins / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays >= 2) return `còn ${diffDays} ngày`;
+    if (diffDays === 1) return `còn 1 ngày`;
+    if (diffHours >= 1) return `còn ${diffHours} giờ`;
+    if (diffMins >= 1) return `còn ${diffMins} phút`;
+    return 'sắp bắt đầu';
+  };
+  const countdown = isCancelled ? null : getCountdown();
 
   // Tính ngày tháng hiển thị
   const [y, mo, d] = raid.raid_date.split('-').map(Number);
@@ -574,7 +626,7 @@ const RaidPickerItem: React.FC<{
   return (
     <div className={`relative flex flex-col rounded-xl border transition-all ${dimmed ? 'opacity-40' : ''} ${
       isSelected
-        ? 'bg-indigo-500/15 border-indigo-500/35'
+        ? 'bg-emerald-500/10 border-emerald-500/30'
         : isCancelled
           ? 'bg-rose-500/5 border-rose-500/15'
           : 'bg-white/[0.025] border-white/[0.06] hover:border-white/[0.1]'
@@ -601,27 +653,38 @@ const RaidPickerItem: React.FC<{
         </div>
       ) : (
         <button type="button" onClick={() => onSelect(raid.id)}
-          className="flex flex-col px-3 py-2.5 text-left w-full gap-0.5">
-          <div className="flex items-start justify-between gap-1 overflow-hidden">
-            <div className="overflow-hidden flex-1 min-w-0">
-              <p className={`text-sm font-semibold truncate leading-snug ${isCancelled ? 'text-slate-500 line-through' : 'text-slate-200'}`}
-                title={raid.title}>
-                {index !== undefined && <span className="text-slate-500 font-normal mr-1">{index + 1}.</span>}
-                {raid.title}
-              </p>
-            </div>
-            <div className="flex items-center gap-1 shrink-0 ml-1">
-              {isSelected && <span className="text-indigo-400 text-sm">✓</span>}
-              {isAdmin && !dimmed && (
-                <button type="button"
-                  onClick={e => { e.stopPropagation(); setEditing(true); }}
-                  className="h-5 w-5 flex items-center justify-center rounded-md text-slate-600 hover:text-slate-300 hover:bg-white/[0.08] transition-all">
-                  <Pencil size={11} />
-                </button>
-              )}
-            </div>
+          className="flex flex-col px-3 py-2.5 pb-3 text-left w-full gap-0.5">
+          <div className="flex items-center gap-1 overflow-hidden">
+            <p className={`text-sm font-semibold truncate leading-snug ${isCancelled ? 'text-slate-500 line-through' : 'text-slate-200'}`}>
+              {index !== undefined && <span className="text-slate-500 font-normal mr-1">{index + 1}.</span>}
+              {raid.title}
+            </p>
+            {/* Tag status — sát ngay sau tên */}
+            {isCancelled ? (
+              <span className="shrink-0 text-[9px] font-bold text-rose-300 bg-rose-500/15 border border-rose-500/25 rounded-full px-1.5 py-0.5">NGHỈ</span>
+            ) : dimmed ? (
+              <span className="shrink-0 text-[9px] font-bold text-slate-400 bg-white/[0.06] border border-white/[0.1] rounded-full px-1.5 py-0.5">ĐÃ QUA</span>
+            ) : (
+              <span className="shrink-0 text-[9px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-1.5 py-0.5">MỞ</span>
+            )}
+            {isSelected && <span className="shrink-0 text-indigo-400 text-sm">✓</span>}
+            {isAdmin && !dimmed && (
+              <button type="button"
+                onClick={e => { e.stopPropagation(); setEditing(true); }}
+                className="shrink-0 h-5 w-5 flex items-center justify-center rounded-md text-slate-600 hover:text-slate-300 hover:bg-white/[0.08] transition-all">
+                <Pencil size={11} />
+              </button>
+            )}
           </div>
-          <p className="text-xs text-slate-500">{raid.raid_time} · {dateLabel}</p>
+          {/* Dòng 2: giờ + countdown */}
+          <div className="flex items-center gap-1.5">
+            <p className="text-xs text-slate-500 shrink-0">{raid.raid_time} · {dateLabel}</p>
+            {countdown ? (
+              <span className="text-[9px] font-semibold text-amber-300 bg-amber-500/15 border border-amber-500/25 rounded-full px-1.5 py-0.5 shrink-0">⏱ {countdown}</span>
+            ) : !isCancelled && !dimmed && (
+              <span className="text-[9px] font-semibold text-amber-300/80 bg-amber-500/10 border border-amber-500/20 rounded-full px-1.5 py-0.5 shrink-0">⚔ Đang diễn ra</span>
+            )}
+          </div>
         </button>
       )}
 
@@ -659,7 +722,7 @@ const RaidPickerItem: React.FC<{
           ) : (
             <button type="button"
               onClick={(e) => { e.stopPropagation(); setConfirmDelete(true); }}
-              className="flex-1 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-500/8 transition-all">
+              className="flex-1 py-1.5 text-xs font-semibold text-slate-500 hover:bg-white/[0.06] hover:text-slate-300 transition-all">
               🗑 Xóa
             </button>
           )}
@@ -673,7 +736,7 @@ const RaidPickerModal: React.FC<RaidPickerModalProps> = ({ raids, selectedRaidId
   const { updateRaid } = useRaids();
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-  const [showPast, setShowPast] = useState(false);
+  const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
 
   const isPast = (raid: Raid) => {
     if (raid.raid_date < today) return true;
@@ -687,7 +750,7 @@ const RaidPickerModal: React.FC<RaidPickerModalProps> = ({ raids, selectedRaidId
   };
 
   const upcoming = raids.filter((r) => !isPast(r));
-  const past = raids.filter((r) => isPast(r));
+  const past = [...raids.filter((r) => isPast(r))].reverse();
 
   return (
   <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
@@ -699,6 +762,7 @@ const RaidPickerModal: React.FC<RaidPickerModalProps> = ({ raids, selectedRaidId
       className="relative z-10 w-full max-w-xl rounded-2xl bg-[#0d1117] border border-white/[0.08] overflow-hidden"
       onClick={(e) => e.stopPropagation()}
     >
+      {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
         <h2 className="text-sm font-bold text-slate-100">Chọn lịch raid</h2>
         <button type="button" onClick={onClose}
@@ -707,60 +771,68 @@ const RaidPickerModal: React.FC<RaidPickerModalProps> = ({ raids, selectedRaidId
         </button>
       </div>
 
-      <div className="p-3 max-h-[70vh] overflow-y-auto flex flex-col gap-3">
-        {raids.length === 0 && <p className="text-xs text-slate-600 text-center py-4">Chưa có raid nào.</p>}
+      {/* Tabs */}
+      <div className="flex gap-2 px-4 py-3 border-b border-white/[0.06]">
+        <button
+          type="button"
+          onClick={() => setActiveTab('upcoming')}
+          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+            activeTab === 'upcoming'
+              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+              : 'bg-white/[0.04] text-slate-500 border border-white/[0.06] hover:text-slate-300 hover:bg-white/[0.07]'
+          }`}
+        >
+          🗓 Sắp diễn ra <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeTab === 'upcoming' ? 'bg-emerald-500/30 text-emerald-200' : 'bg-white/[0.08] text-slate-500'}`}>{upcoming.length}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('past')}
+          className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+            activeTab === 'past'
+              ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+              : 'bg-white/[0.04] text-slate-500 border border-white/[0.06] hover:text-slate-300 hover:bg-white/[0.07]'
+          }`}
+        >
+          🕐 Đã qua <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeTab === 'past' ? 'bg-rose-500/30 text-rose-200' : 'bg-white/[0.08] text-slate-500'}`}>{past.length}</span>
+        </button>
+      </div>
 
-        {/* Sắp tới — 2 cột */}
-        {upcoming.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
-              Sắp diễn ra · {upcoming.length}
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {upcoming.map((raid, i) => (
-                <RaidPickerItem key={raid.id} raid={raid} isSelected={raid.id === selectedRaidId}
-                  isAdmin={isAdmin} index={i} onSelect={onSelect} onToggleStatus={onToggleStatus}
-                  onDelete={onDelete}
-                  onEdit={async (r, t, d, ti) => { await updateRaid(r.id, t, d, ti); }} />
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Đã qua — collapsible */}
-        {past.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <button type="button" onClick={() => setShowPast(v => !v)}
-              className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 uppercase tracking-wider px-1 hover:text-slate-400 transition-colors">
-              <ChevronDown size={11} className={`transition-transform ${showPast ? 'rotate-180' : ''}`} />
-              Đã qua · {past.length}
-            </button>
-            <AnimatePresence>
-              {showPast && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.2 }}
-                  className="flex gap-2 overflow-hidden">
-                  <div className="flex flex-col gap-2 flex-1">
-                    {[...past].reverse().filter((_, i) => i % 2 === 0).map((raid, i) => (
+      {/* Content */}
+      <div className="p-3 overflow-y-auto" style={{ height: '60vh' }}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+          >
+            {activeTab === 'upcoming' && (
+              upcoming.length === 0
+                ? <p className="text-xs text-slate-600 text-center py-8">Chưa có raid nào sắp diễn ra.</p>
+                : <div className="grid grid-cols-2 gap-2">
+                    {upcoming.map((raid, i) => (
                       <RaidPickerItem key={raid.id} raid={raid} isSelected={raid.id === selectedRaidId}
-                        isAdmin={isAdmin} index={i * 2} onSelect={onSelect} onToggleStatus={onToggleStatus}
+                        isAdmin={isAdmin} index={i} onSelect={onSelect} onToggleStatus={onToggleStatus}
+                        onDelete={onDelete}
+                        onEdit={async (r, t, d, ti) => { await updateRaid(r.id, t, d, ti); }} />
+                    ))}
+                  </div>
+            )}
+            {activeTab === 'past' && (
+              past.length === 0
+                ? <p className="text-xs text-slate-600 text-center py-8">Chưa có raid nào đã qua.</p>
+                : <div className="grid grid-cols-2 gap-2">
+                    {past.map((raid, i) => (
+                      <RaidPickerItem key={raid.id} raid={raid} isSelected={raid.id === selectedRaidId}
+                        isAdmin={isAdmin} index={i} onSelect={onSelect} onToggleStatus={onToggleStatus}
                         onDelete={onDelete}
                         onEdit={async (r, t, d, ti) => { await updateRaid(r.id, t, d, ti); }} dimmed />
                     ))}
                   </div>
-                  <div className="flex flex-col gap-2 flex-1">
-                    {[...past].reverse().filter((_, i) => i % 2 === 1).map((raid, i) => (
-                      <RaidPickerItem key={raid.id} raid={raid} isSelected={raid.id === selectedRaidId}
-                        isAdmin={isAdmin} index={i * 2 + 1} onSelect={onSelect} onToggleStatus={onToggleStatus}
-                        onDelete={onDelete}
-                        onEdit={async (r, t, d, ti) => { await updateRaid(r.id, t, d, ti); }} dimmed />
-                    ))}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        )}
+            )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </motion.div>
   </div>
