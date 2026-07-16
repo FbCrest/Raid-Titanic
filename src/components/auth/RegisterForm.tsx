@@ -87,7 +87,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
         sub_class: subClass,
         discord: discord.trim(),
         facebook: facebook.trim(),
-        zalo: '',
       });
 
       if (profileError) {

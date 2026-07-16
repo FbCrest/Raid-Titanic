@@ -26,7 +26,6 @@ const ROLE_ACCENT: Record<string, string> = {
 const CONTACT_META = {
   discord:  { label: 'Discord',  color: '#5865F2' },
   facebook: { label: 'Facebook', color: '#1877F2' },
-  zalo:     { label: 'Zalo',     color: '#0068FF' },
 } as const;
 
 export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
@@ -41,7 +40,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
     sub_class: profile?.sub_class ?? '',
     discord: profile?.discord ?? '',
     facebook: profile?.facebook ?? '',
-    zalo: profile?.zalo ?? '',
     avatar_url: profile?.avatar_url ?? '',
   });
   const [saving, setSaving] = useState(false);
@@ -94,7 +92,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
       sub_class: form.sub_class,
       discord: form.discord.trim(),
       facebook: form.facebook.trim(),
-      zalo: form.zalo.trim(),
       avatar_url: form.avatar_url,
     }).eq('id', profile!.id);
     if (err) { setError('Lỗi khi lưu.'); } else { await refreshProfile(); setEditing(false); }
@@ -108,7 +105,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
       sub_class: profile?.sub_class ?? '',
       discord: profile?.discord ?? '',
       facebook: profile?.facebook ?? '',
-      zalo: profile?.zalo ?? '',
       avatar_url: profile?.avatar_url ?? '',
     });
     setError(''); setEditing(false);
@@ -259,8 +255,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({ onClose }) => {
         {/* ── LIÊN HỆ ── */}
         <div className="px-5 py-4">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Liên hệ</p>
-          <div className="grid grid-cols-3 gap-2">
-            {(['discord', 'facebook', 'zalo'] as const).map(field => {
+          <div className="grid grid-cols-2 gap-2">
+            {(['discord', 'facebook'] as const).map(field => {
               const meta = CONTACT_META[field];
               const val = editing ? form[field] : (profile?.[field] ?? '');
               return (

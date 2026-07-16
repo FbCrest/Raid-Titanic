@@ -230,6 +230,8 @@ export const MembersPage: React.FC = () => {
   const [updating, setUpdating] = useState<string | null>(null);
   const [viewingProfile, setViewingProfile] = useState<Profile | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+  const [classTab, setClassTab] = useState<'main' | 'sub'>('main');
+  const [classFilter, setClassFilter] = useState<string | null>(null);
 
   const fetchProfiles = async () => {
     const { data } = await supabase
@@ -286,21 +288,19 @@ export const MembersPage: React.FC = () => {
 
   const pending = profiles.filter(p => p.role === 'pending');
   const members = profiles.filter(p => p.role !== 'pending');
-  const filteredSuperAdmins = members.filter(p =>
-    p.role === 'superadmin' &&
-    (p.display_name.toLowerCase().includes(search.toLowerCase()) ||
-     p.username.toLowerCase().includes(search.toLowerCase()))
-  );
-  const filteredAdmins = members.filter(p =>
-    p.role === 'admin' &&
-    (p.display_name.toLowerCase().includes(search.toLowerCase()) ||
-     p.username.toLowerCase().includes(search.toLowerCase()))
-  );
-  const filteredMembers = members.filter(p =>
-    p.role === 'member' &&
-    (p.display_name.toLowerCase().includes(search.toLowerCase()) ||
-     p.username.toLowerCase().includes(search.toLowerCase()))
-  );
+
+  const matchesFilter = (p: Profile) => {
+    const matchSearch = p.display_name.toLowerCase().includes(search.toLowerCase()) ||
+      p.username.toLowerCase().includes(search.toLowerCase());
+    const matchClass = !classFilter || (
+      classTab === 'main' ? p.main_class === classFilter : p.sub_class === classFilter
+    );
+    return matchSearch && matchClass;
+  };
+
+  const filteredSuperAdmins = members.filter(p => p.role === 'superadmin' && matchesFilter(p));
+  const filteredAdmins      = members.filter(p => p.role === 'admin'      && matchesFilter(p));
+  const filteredMembers     = members.filter(p => p.role === 'member'     && matchesFilter(p));
 
   return (
     <div className="relative min-h-screen bg-[#080a10] text-slate-300 antialiased">
@@ -335,14 +335,16 @@ export const MembersPage: React.FC = () => {
           const adminCount      = members.filter(p => p.role === 'admin').length;
           const memberCount     = members.filter(p => p.role === 'member').length;
 
-          // thống kê phái chính
-          const classCount: Record<string, number> = {};
+          // thống kê phái chính & phụ
+          const mainCount: Record<string, number> = {};
+          const subCount: Record<string, number> = {};
           members.forEach(p => {
-            if (p.main_class) classCount[p.main_class] = (classCount[p.main_class] ?? 0) + 1;
+            if (p.main_class) mainCount[p.main_class] = (mainCount[p.main_class] ?? 0) + 1;
+            if (p.sub_class)  subCount[p.sub_class]   = (subCount[p.sub_class]   ?? 0) + 1;
           });
-          const topClasses = Object.entries(classCount)
-            .sort((a, b) => b[1] - a[1])
-            .slice(0, 5);
+          const topMain = Object.entries(mainCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+          const topSub  = Object.entries(subCount).sort((a, b) => b[1] - a[1]).slice(0, 6);
+          const topClasses = classTab === 'main' ? topMain : topSub;
 
           return (
             <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.04 }}
@@ -372,24 +374,75 @@ export const MembersPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Phái chính */}
-                {topClasses.length > 0 && (
+                {/* Tab phái chính / phụ */}
+                {(topMain.length > 0 || topSub.length > 0) && (
                   <div>
-                    <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest mb-2">Phái chính phổ biến</p>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {topClasses.map(([classId, count]) => {
-                        const cls = CLASS_OPTIONS.find(c => c.id === classId);
-                        if (!cls) return null;
-                        return (
-                          <div key={classId} className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border"
-                            style={{ background: `${cls.hex}10`, borderColor: `${cls.hex}30` }}>
-                            <img src={`/icon-phai/${cls.iconName}`} className="w-4 h-4 object-contain shrink-0" alt="" />
-                            <span className="text-xs font-semibold" style={{ color: cls.hex }}>{cls.name}</span>
-                            <span className="text-[10px] font-black rounded-full px-1.5 py-0.5" style={{ background: `${cls.hex}20`, color: cls.hex }}>{count}</span>
-                          </div>
-                        );
-                      })}
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="relative flex items-center gap-0 rounded-lg bg-white/[0.04] border border-white/[0.06] p-0.5">
+                        {(['main', 'sub'] as const).map(tab => (
+                          <button key={tab} type="button"
+                            onClick={() => { setClassTab(tab); setClassFilter(null); }}
+                            className="relative px-3 py-1 rounded-md text-[10px] font-semibold transition-colors z-10"
+                            style={{ color: classTab === tab ? '#fde68a' : '#6ee7b7' }}
+                          >
+                            {classTab === tab && (
+                              <motion.div
+                                layoutId="class-tab-indicator"
+                                className="absolute inset-0 rounded-md"
+                                style={{ background: 'rgba(234,179,8,0.15)', border: '1px solid rgba(234,179,8,0.3)' }}
+                                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                              />
+                            )}
+                            <span className="relative z-10">{tab === 'main' ? 'Phái chính' : 'Phái phụ'}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <AnimatePresence>
+                        {classFilter && (
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.85 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.85 }}
+                            transition={{ duration: 0.15 }}
+                            type="button" onClick={() => setClassFilter(null)}
+                            className="px-2.5 py-1 rounded-lg text-[10px] font-semibold text-rose-300 border border-rose-500/30 bg-rose-500/10 hover:bg-rose-500/20 transition-colors">
+                            ✕ Bỏ lọc
+                          </motion.button>
+                        )}
+                      </AnimatePresence>
                     </div>
+                    <AnimatePresence mode="wait">
+                      <motion.div key={classTab}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.18 }}
+                        className="flex items-center gap-2 flex-wrap"
+                      >
+                        {topClasses.map(([classId, count]) => {
+                          const cls = CLASS_OPTIONS.find(c => c.id === classId);
+                          if (!cls) return null;
+                          const isActive = classFilter === classId;
+                          return (
+                            <button key={classId} type="button"
+                              onClick={() => setClassFilter(isActive ? null : classId)}
+                              className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 border transition-all"
+                              style={{
+                                background: isActive ? `${cls.hex}25` : `${cls.hex}10`,
+                                borderColor: isActive ? `${cls.hex}60` : `${cls.hex}30`,
+                                boxShadow: isActive ? `0 0 12px ${cls.hex}20` : 'none',
+                              }}>
+                              <img src={`/icon-phai/${cls.iconName}`} className="w-4 h-4 object-contain shrink-0" alt="" />
+                              <span className="text-xs font-semibold" style={{ color: cls.hex }}>{cls.name}</span>
+                              <span className="text-[10px] font-black rounded-full px-1.5 py-0.5" style={{ background: `${cls.hex}20`, color: cls.hex }}>{count}</span>
+                            </button>
+                          );
+                        })}
+                        {topClasses.length === 0 && (
+                          <p className="text-[10px] text-slate-600 italic">Chưa có dữ liệu</p>
+                        )}
+                      </motion.div>
+                    </AnimatePresence>
                   </div>
                 )}
               </div>

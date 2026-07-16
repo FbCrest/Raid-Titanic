@@ -31,7 +31,6 @@ const ROLE_ACCENT: Record<string, string> = {
 const CONTACT_META = {
   discord:  { label: 'Discord',  color: '#5865F2' },
   facebook: { label: 'Facebook', color: '#1877F2' },
-  zalo:     { label: 'Zalo',     color: '#0068FF' },
 } as const;
 
 export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
@@ -48,7 +47,6 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
     sub_class: target.sub_class,
     discord: target.discord,
     facebook: target.facebook,
-    zalo: target.zalo,
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -80,7 +78,6 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
       sub_class: target.sub_class,
       discord: target.discord,
       facebook: target.facebook,
-      zalo: target.zalo,
     });
     setError('');
     setEditing(false);
@@ -223,8 +220,8 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
         {/* ── LIÊN HỆ ── */}
         <div className="px-5 py-4">
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3">Liên hệ</p>
-          <div className="grid grid-cols-3 gap-2">
-            {(['discord', 'facebook', 'zalo'] as const).map(field => {
+          <div className="grid grid-cols-2 gap-2">
+            {(['discord', 'facebook'] as const).map(field => {
               const meta = CONTACT_META[field];
               const val = target[field];
               return (
