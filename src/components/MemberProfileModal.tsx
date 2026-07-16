@@ -156,6 +156,19 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                 {target.role === 'member'     && <img src="/Member.gif"      alt="" className="w-4 h-4 object-contain" />}
                 {ROLE_LABEL[target.role] ?? target.role}
               </span>
+              {target.created_at && (() => {
+                const d = new Date(target.created_at);
+                const h = d.getHours();
+                const session = h < 6 ? 'đêm' : h < 12 ? 'sáng' : h < 14 ? 'trưa' : h < 18 ? 'chiều' : 'tối';
+                const pad = (n: number) => String(n).padStart(2, '0');
+                return (
+                  <p className="text-[10px] text-slate-500 mt-1.5">
+                    Tham gia: <span className="text-slate-300 font-semibold">{pad(h)}:{pad(d.getMinutes())} </span>
+                    <span className="text-amber-400 font-semibold">{session}</span>
+                    <span className="text-slate-500"> — {pad(d.getDate())}/{pad(d.getMonth()+1)}/{d.getFullYear()}</span>
+                  </p>
+                );
+              })()}
             </div>
           </div>
 

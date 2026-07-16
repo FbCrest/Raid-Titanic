@@ -281,3 +281,66 @@ alter table public.profiles
 
 -- Set 0rion24k là superadmin (quyền cao nhất)
 update public.profiles set role = 'superadmin' where username = '0rion24k';
+
+-- ── 10. CHAT MESSAGES ───────────────────────────────────────
+create table if not exists public.chat_messages (
+  id         uuid        primary key default gen_random_uuid(),
+  user_id    uuid        not null references public.profiles(id) on delete cascade,
+  content    text        not null check (char_length(content) <= 1000),
+  created_at timestamptz default now()
+);
+alter table public.chat_messages enable row level security;
+
+drop policy if exists "chat_select"  on public.chat_messages;
+drop policy if exists "chat_insert"  on public.chat_messages;
+drop policy if exists "chat_delete"  on public.chat_messages;
+
+-- Mọi thành viên đã duyệt đều đọc được
+create policy "chat_select" on public.chat_messages for select
+  using (exists (select 1 from public.profiles where id = auth.uid() and role in ('member', 'admin', 'superadmin')));
+
+-- Chỉ tự gửi tin của mình
+create policy "chat_insert" on public.chat_messages for insert
+  with check (
+    auth.uid() = user_id and
+    exists (select 1 from public.profiles where id = auth.uid() and role in ('member', 'admin', 'superadmin'))
+  );
+
+-- Admin/superadmin có thể xóa tin nhắn vi phạm
+create policy "chat_delete" on public.chat_messages for delete
+  using (
+    auth.uid() = user_id or
+    exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
+  );
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and tablename = 'chat_messages'
+  ) then
+    alter publication supabase_realtime add table public.chat_messages;
+  end if;
+end $$;
+
+-- ── 11. AUTO-CLEANUP CHAT MESSAGES (>2 tuần) ────────────────
+-- Dùng pg_cron để xóa tin nhắn cũ hơn 14 ngày mỗi ngày lúc 3:00 SA
+-- pg_cron đã được bật sẵn trên Supabase
+
+-- Bật extension nếu chưa có
+create extension if not exists pg_cron;
+
+-- Xóa job cũ nếu đã tồn tại
+select cron.unschedule('cleanup-chat-messages') where exists (
+  select 1 from cron.job where jobname = 'cleanup-chat-messages'
+);
+
+-- Tạo job chạy mỗi ngày lúc 3:00 SA (UTC)
+select cron.schedule(
+  'cleanup-chat-messages',
+  '0 20 * * *',  -- 20:00 UTC = 03:00 SA giờ VN (UTC+7)
+  $$
+    delete from public.chat_messages
+    where created_at < now() - interval '14 days';
+  $$
+);

@@ -6,6 +6,7 @@ import { RejectedPage } from './components/auth/RejectedPage';
 import { OnlineApp } from './components/OnlineApp';
 import { AvailabilityPage } from './pages/AvailabilityPage';
 import { MembersPage } from './pages/MembersPage';
+import { ChatBubble } from './components/ChatBubble';
 
 function SetupPage() {
   return (
@@ -55,12 +56,15 @@ function ProtectedRoutes() {
   if (profile.role === 'rejected') return <RejectedPage />;
 
   return (
-    <Routes>
-      <Route path="/" element={<OnlineApp />} />
-      <Route path="/bao-ban" element={<AvailabilityPage />} />
-      <Route path="/thanh-vien" element={<MembersPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route path="/" element={<OnlineApp />} />
+        <Route path="/bao-ban" element={<AvailabilityPage />} />
+        <Route path="/thanh-vien" element={<MembersPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+      <ChatBubble />
+    </>
   );
 }
 

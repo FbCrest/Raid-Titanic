@@ -7,6 +7,18 @@ import { useAuth } from '../context/AuthContext';
 import { CLASS_OPTIONS } from '../data/classes';
 import { MemberProfileModal } from '../components/MemberProfileModal';
 
+const formatJoinDate = (isoString: string) => {
+  const d = new Date(isoString);
+  const h = d.getHours();
+  const session = h < 6 ? 'đêm' : h < 12 ? 'sáng' : h < 14 ? 'trưa' : h < 18 ? 'chiều' : 'tối';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return {
+    time:    `${pad(h)}:${pad(d.getMinutes())}`,
+    session,
+    date:    `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`,
+  };
+};
+
 const ROLE_LABEL: Record<string, string> = {
   superadmin: 'Super Admin', admin: 'Admin', member: 'Thành viên', pending: 'Chờ duyệt',
 };
@@ -471,10 +483,19 @@ export const MembersPage: React.FC = () => {
                           </div>
                       }
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-200 truncate">{p.display_name}</p>
                       <p className="text-xs text-slate-600">@{p.username}</p>
                     </div>
+                    {p.created_at && (() => {
+                      const { time, session, date } = formatJoinDate(p.created_at);
+                      return (
+                        <div className="ml-3 shrink-0 text-right">
+                          <p className="text-xs font-bold text-slate-300">{time} <span className="text-amber-400">{session}</span></p>
+                          <p className="text-[11px] text-slate-500">{date}</p>
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div className="flex items-center gap-2 shrink-0 pr-4">
                     <button type="button" onClick={() => setViewingProfile(p)}
