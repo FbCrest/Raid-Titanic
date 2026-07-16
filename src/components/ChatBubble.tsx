@@ -62,6 +62,7 @@ export const ChatBubble: React.FC = () => {
   const inputRef    = useRef<HTMLTextAreaElement>(null);
   const openRef     = useRef(open);
   const atBottomRef = useRef(atBottom);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => { openRef.current = open; }, [open]);
   useEffect(() => { atBottomRef.current = atBottom; }, [atBottom]);
@@ -171,7 +172,15 @@ export const ChatBubble: React.FC = () => {
   if (!profile || profile.role === 'pending' || profile.role === 'rejected') return null;
 
   return (
-    <div className="fixed bottom-5 right-5 z-[200] flex flex-col items-end gap-3 select-none">
+    <div ref={containerRef} className="fixed bottom-5 right-5 z-[200] flex flex-col items-end gap-3 select-none">
+
+      {/* Backdrop — click outside để đóng */}
+      {open && (
+        <div
+          className="fixed inset-0 z-[-1]"
+          onClick={() => setOpen(false)}
+        />
+      )}
 
       {/* ── Chat Window ── */}
       <AnimatePresence>
