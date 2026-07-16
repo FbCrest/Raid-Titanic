@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Save, Shield, KeyRound, Swords, Trash2, Pencil } from 'lucide-react';
+import { X, Save, Shield, KeyRound, Swords, Trash2, Pencil, CheckCircle, XCircle } from 'lucide-react';
 import { supabase, Profile } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { CLASS_OPTIONS } from '../data/classes';
@@ -11,6 +11,7 @@ interface MemberProfileModalProps {
   onClose: () => void;
   onUpdated: (updated: Profile) => void;
   onDelete?: (id: string) => void;
+  onApprove?: (id: string) => void;
   isAdmin?: boolean;
 }
 
@@ -34,7 +35,7 @@ const CONTACT_META = {
 } as const;
 
 export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
-  target, onClose, onUpdated, onDelete, isAdmin,
+  target, onClose, onUpdated, onDelete, onApprove, isAdmin,
 }) => {
   const { profile: myProfile, isSuperAdmin } = useAuth();
   const isMe = target.id === myProfile?.id;
@@ -280,6 +281,36 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
                     {ROLE_LABEL[role]}{target.role === role ? ' ✓' : ''}
                   </button>
                 ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* ── PENDING ACTIONS (Admin xem user chờ duyệt) ── */}
+        {target.role === 'pending' && (isAdmin || isSuperAdmin) && !isMe && (
+          <>
+            <div className="mx-5 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
+            <div className="px-5 py-4">
+              <p className="text-xs font-semibold text-amber-500/70 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+                <CheckCircle size={11} /> Xét duyệt
+              </p>
+              <div className="flex gap-2">
+                {onApprove && (
+                  <button type="button"
+                    onClick={() => { onApprove(target.id); onClose(); }}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-emerald-200 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all"
+                    style={{ background: 'rgba(52,211,153,0.1)' }}>
+                    <CheckCircle size={14} /> Duyệt thành viên
+                  </button>
+                )}
+                {onDelete && (
+                  <button type="button"
+                    onClick={() => { onDelete(target.id); onClose(); }}
+                    className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-bold text-rose-300 border border-rose-500/25 hover:bg-rose-500/15 transition-all"
+                    style={{ background: 'rgba(239,68,68,0.07)' }}>
+                    <XCircle size={14} /> Từ chối
+                  </button>
+                )}
               </div>
             </div>
           </>

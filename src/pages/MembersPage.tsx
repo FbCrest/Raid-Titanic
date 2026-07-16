@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Users, Shield, Clock, CheckCircle, XCircle, Search, AlertTriangle, KeyRound, Swords } from 'lucide-react';
+import { ArrowLeft, Users, Shield, Clock, CheckCircle, XCircle, Search, AlertTriangle, KeyRound, Swords, Eye } from 'lucide-react';
 import { supabase, Profile } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { CLASS_OPTIONS } from '../data/classes';
@@ -407,20 +407,27 @@ export const MembersPage: React.FC = () => {
               {pending.map(p => (
                 <motion.div key={p.id}
                   initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                  className="flex items-center gap-3 rounded-2xl bg-amber-500/5 border border-amber-500/15 px-4 py-3">
-                  <div className="h-10 w-10 rounded-xl overflow-hidden border border-amber-500/20 shrink-0">
-                    {p.avatar_url
-                      ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" />
-                      : <div className="h-full w-full bg-amber-500/15 flex items-center justify-center">
-                          <span className="text-sm font-black text-amber-300">{p.display_name[0]}</span>
-                        </div>
-                    }
+                  className="flex items-center gap-3 rounded-2xl bg-amber-500/5 border border-amber-500/15 overflow-hidden">
+                  {/* Vùng info */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0 px-4 py-3">
+                    <div className="h-10 w-10 rounded-xl overflow-hidden border border-amber-500/20 shrink-0">
+                      {p.avatar_url
+                        ? <img src={p.avatar_url} alt="" className="h-full w-full object-cover" />
+                        : <div className="h-full w-full bg-amber-500/15 flex items-center justify-center">
+                            <span className="text-sm font-black text-amber-300">{p.display_name[0]}</span>
+                          </div>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-200 truncate">{p.display_name}</p>
+                      <p className="text-xs text-slate-600">@{p.username}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-200 truncate">{p.display_name}</p>
-                    <p className="text-xs text-slate-600">@{p.username}</p>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0 pr-4">
+                    <button type="button" onClick={() => setViewingProfile(p)}
+                      className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-xs font-semibold text-amber-300 hover:bg-amber-500/20 transition-all">
+                      <Eye size={12} /> Xem
+                    </button>
                     <button type="button" disabled={updating === p.id} onClick={() => updateRole(p.id, 'member')}
                       className="flex items-center gap-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 px-3 py-1.5 text-xs font-semibold text-emerald-300 hover:bg-emerald-500/25 transition-all disabled:opacity-50">
                       <CheckCircle size={12} /> Duyệt
@@ -504,6 +511,10 @@ export const MembersPage: React.FC = () => {
             target={viewingProfile}
             onClose={() => setViewingProfile(null)}
             isAdmin={isAdmin}
+            onApprove={(id) => {
+              setViewingProfile(null);
+              updateRole(id, 'member');
+            }}
             onDelete={(id) => {
               setViewingProfile(null);
               rejectUser(id);

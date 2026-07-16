@@ -14,10 +14,29 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
   const [password, setPassword] = useState('');
   const [mainClass, setMainClass] = useState('');
   const [subClass, setSubClass] = useState('');
+  const [discord, setDiscord] = useState('');
+  const [facebook, setFacebook] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+
+  // Validate Facebook URL — chỉ chấp nhận trang cá nhân
+  // Hợp lệ: facebook.com/tên, fb.com/tên, facebook.com/profile.php?id=...
+  // Không hợp lệ: video, reel, watch, groups, pages, events, marketplace...
+  const INVALID_FB_PATHS = /\/(video|videos|reel|reels|watch|groups|pages|events|marketplace|gaming|live|stories|photos|media|hashtag|ads|business)\b/i;
+  const FB_PROFILE_RE = /^https?:\/\/(www\.)?(facebook\.com|fb\.com)\/(profile\.php\?id=\d+|(?!video|videos|reel|reels|watch|groups|pages|events|marketplace|gaming|live|stories|photos|media|hashtag|ads|business)[A-Za-z0-9._%-]{1,})\/?(\?.*)?$/;
+
+  const validateFacebook = (url: string): string => {
+    if (!url) return '';
+    if (!url.startsWith('http')) return 'Link Facebook phải bắt đầu bằng https://';
+    if (!/facebook\.com|fb\.com/.test(url)) return 'Phải là link Facebook (facebook.com hoặc fb.com)';
+    if (INVALID_FB_PATHS.test(url)) return 'Chỉ nhập link trang cá nhân, không nhập link video/reel/nhóm/trang';
+    if (!FB_PROFILE_RE.test(url)) return 'Link không hợp lệ, vui lòng dùng link trang cá nhân Facebook';
+    return '';
+  };
+
+  const fbError = facebook.trim() ? validateFacebook(facebook.trim()) : '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,6 +53,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
     }
     if (!displayName.trim()) {
       setError('Vui lòng nhập tên hiển thị.');
+      return;
+    }
+    if (!discord.trim() && !facebook.trim()) {
+      setError('Vui lòng điền ít nhất Discord hoặc Facebook để Admin có thể liên hệ bạn.');
+      return;
+    }
+    if (facebook.trim() && validateFacebook(facebook.trim())) {
+      setError(validateFacebook(facebook.trim()));
       return;
     }
 
@@ -58,8 +85,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
         role: 'pending',
         main_class: mainClass,
         sub_class: subClass,
-        discord: '',
-        facebook: '',
+        discord: discord.trim(),
+        facebook: facebook.trim(),
         zalo: '',
       });
 
@@ -100,26 +127,28 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      {/* Tên tài khoản */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-slate-400">Tên tài khoản</label>
-        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
-          placeholder="vd: nguyenvana" required title=""
-          className="w-full rounded-xl bg-white/[0.05] border border-white/[0.08] px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all" />
-        <p className="text-[10px] text-slate-600">3-20 ký tự, chỉ dùng a-z, 0-9, dấu _</p>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+
+      {/* Hàng 1: Tên tài khoản + Tên hiển thị */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-slate-400">Tên tài khoản</label>
+          <input type="text" value={username} onChange={(e) => setUsername(e.target.value)}
+            placeholder="Tên tài khoản" required title=""
+            className="w-full rounded-xl bg-white/[0.05] border border-white/[0.08] px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all" />
+          <p className="text-[10px] text-slate-600">3-20 ký tự, a-z, 0-9, dấu _</p>
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-xs font-medium text-slate-400">Tên hiển thị trên web</label>
+          <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="vd: Nguyễn Văn A" required title=""
+            className="w-full rounded-xl bg-white/[0.05] border border-white/[0.08] px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all" />
+          <p className="text-[10px] text-transparent select-none">_</p>
+        </div>
       </div>
 
-      {/* Tên hiển thị */}
-      <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-medium text-slate-400">Tên hiển thị</label>
-        <input type="text" value={displayName} onChange={(e) => setDisplayName(e.target.value)}
-          placeholder="vd: Nguyễn Văn A" required title=""
-          className="w-full rounded-xl bg-white/[0.05] border border-white/[0.08] px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 focus:bg-white/[0.07] transition-all" />
-      </div>
-
-      {/* Phái chính & phụ */}
-      <div className="grid grid-cols-2 gap-2">
+      {/* Hàng 2: Phái chính + Phái phụ */}
+      <div className="grid grid-cols-2 gap-3">
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-slate-400">Phái chính</label>
           <ClassDropdown value={mainClass} onChange={setMainClass} placeholder="— Chọn —" />
@@ -130,7 +159,61 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
         </div>
       </div>
 
-      {/* Mật khẩu */}
+      {/* Hàng 3: Discord + Facebook */}
+      <div className="flex items-center">
+        <span className="text-xs font-medium text-slate-400">Thông tin liên hệ</span>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-semibold" style={{ color: '#5865F2' }}>Discord</label>
+          <input
+            type="text"
+            value={discord}
+            onChange={e => setDiscord(e.target.value)}
+            placeholder="Tên Discord..."
+            className={`w-full rounded-xl bg-white/[0.05] border px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-all focus:bg-white/[0.07] ${
+              discord.trim()
+                ? 'border-[#5865F2]/40 focus:border-[#5865F2]/70'
+                : !facebook.trim()
+                ? 'border-amber-500/30 focus:border-amber-500/60'
+                : 'border-white/[0.08] focus:border-indigo-500/50'
+            }`}
+          />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <label className="text-[11px] font-semibold" style={{ color: '#1877F2' }}>Facebook</label>
+          <input
+            type="text"
+            value={facebook}
+            onChange={e => setFacebook(e.target.value)}
+            placeholder="Link Facebook..."
+            className={`w-full rounded-xl bg-white/[0.05] border px-3 py-2.5 text-sm text-slate-100 placeholder-slate-600 outline-none transition-all focus:bg-white/[0.07] ${
+              facebook.trim() && fbError
+                ? 'border-rose-500/50 focus:border-rose-500/70'
+                : facebook.trim() && !fbError
+                ? 'border-[#1877F2]/40 focus:border-[#1877F2]/70'
+                : !discord.trim()
+                ? 'border-amber-500/30 focus:border-amber-500/60'
+                : 'border-white/[0.08] focus:border-indigo-500/50'
+            }`}
+          />
+        </div>
+      </div>
+      {/* Hint / error realtime */}
+      <div className="-mt-1 min-h-[1rem]">
+        {fbError ? (
+          <p className="text-[10px] text-rose-400">⚠ {fbError}</p>
+        ) : facebook.trim() && !fbError ? (
+          <p className="text-[10px] text-emerald-500/80">✓ Link Facebook hợp lệ.</p>
+        ) : (
+          <p className="text-[10px] text-amber-400/80">
+            <span className="inline-flex items-center bg-amber-500/10 border border-amber-500/20 rounded-full px-2 py-0.5 mr-1.5 font-semibold leading-tight">Bắt buộc ít nhất 1 trong 2</span>
+            Điền tên Discord hoặc link trang cá nhân Facebook để admin xác định danh tính thành viên.
+          </p>
+        )}
+      </div>
+
+      {/* Mật khẩu — full width */}
       <div className="flex flex-col gap-1.5">
         <label className="text-xs font-medium text-slate-400">Mật khẩu</label>
         <div className="relative">
