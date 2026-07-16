@@ -19,19 +19,18 @@ interface ChatMessage {
 }
 
 const ROLE_COLOR: Record<string, string> = {
-  superadmin: '#fde68a', // yellow-300
+  superadmin: '#fde047', // Tailwind v4 yellow-300
   admin:      '#fda4af', // rose-300
   member:     '#6ee7b7', // emerald-300
-  pending:    '#fcd34d', // amber-300
+  pending:    '#fcd34d',
 };
 
 const ROLE_LABEL_MAP: Record<string, string> = {
   superadmin: 'Super Admin', admin: 'Admin', member: 'Thành viên',
 };
 
-// Màu role label giống MembersPage (text color trong badge)
 const ROLE_LABEL_COLOR: Record<string, string> = {
-  superadmin: '#fde68a',
+  superadmin: '#fde047',
   admin:      '#fda4af',
   member:     '#6ee7b7',
 };
@@ -245,8 +244,10 @@ export const ChatBubble: React.FC = () => {
                 const d = new Date(msg.created_at);
                 const ts = `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
 
-                const ROLE_LABEL_MAP: Record<string, string> = {
-                  superadmin: 'Super Admin', admin: 'Admin', member: 'Thành viên',
+                const ROLE_CLASS: Record<string, string> = {
+                  superadmin: 'text-yellow-300',
+                  admin:      'text-rose-300',
+                  member:     'text-emerald-300',
                 };
 
                 return (
@@ -278,7 +279,7 @@ export const ChatBubble: React.FC = () => {
                     <div className="flex-1 min-w-0">
                       {/* Dòng 1: tên · icon phái · icon role · role · thời gian */}
                       <div className="flex items-center gap-1 flex-wrap">
-                        <span className="text-[11px] font-bold leading-tight shrink-0" style={{ color: roleColor }}>
+                        <span className={`text-[11px] font-bold leading-tight shrink-0 ${ROLE_CLASS[role] ?? 'text-emerald-300'}`}>
                           {p?.display_name ?? '???'}
                         </span>
                         {cls && (
@@ -287,10 +288,10 @@ export const ChatBubble: React.FC = () => {
                         {roleIcon && (
                           <img src={roleIcon} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />
                         )}
-                        <span className="text-[9px] font-semibold shrink-0" style={{ color: ROLE_LABEL_COLOR[role] ?? roleColor }}>
+                        <span className={`text-[9px] font-semibold shrink-0 ${ROLE_CLASS[role] ?? 'text-emerald-300'}`}>
                           {ROLE_LABEL_MAP[role] ?? role}
                         </span>
-                        <span className="text-[9px] text-slate-600 font-mono shrink-0">{ts}</span>
+                        <span className="text-[9px] text-slate-400 font-mono shrink-0">{ts}</span>
                       </div>
                       {/* Dòng 2: nội dung tin nhắn */}
                       <div className="flex items-start justify-between gap-1 mt-0.5">
