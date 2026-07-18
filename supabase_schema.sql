@@ -323,24 +323,38 @@ begin
   end if;
 end $$;
 
--- ── 11. AUTO-CLEANUP CHAT MESSAGES (>2 tuần) ────────────────
--- Dùng pg_cron để xóa tin nhắn cũ hơn 14 ngày mỗi ngày lúc 3:00 SA
--- pg_cron đã được bật sẵn trên Supabase
+-- ── 11. AUTO-CLEANUP CHAT MESSAGES ────────────────────────
+-- Logic: giữ tối thiểu 100 tin mới nhất, xóa tin >14 ngày chỉ khi có >100 tin
+-- Chạy mỗi ngày lúc 3:00 SA giờ VN (20:00 UTC)
 
--- Bật extension nếu chưa có
 create extension if not exists pg_cron;
 
--- Xóa job cũ nếu đã tồn tại
+-- Tạo function cleanup
+create or replace function public.cleanup_chat_messages()
+returns void language plpgsql as $$
+declare
+  total_count integer;
+begin
+  select count(*) into total_count from public.chat_messages;
+  if total_count > 100 then
+    delete from public.chat_messages
+    where created_at < now() - interval '14 days'
+      and id not in (
+        select id from public.chat_messages
+        order by created_at desc
+        limit 100
+      );
+  end if;
+end;
+$$;
+
+-- Lên lịch chạy hàng ngày lúc 20:00 UTC (03:00 SA giờ VN)
 select cron.unschedule('cleanup-chat-messages') where exists (
   select 1 from cron.job where jobname = 'cleanup-chat-messages'
 );
 
--- Tạo job chạy mỗi ngày lúc 3:00 SA (UTC)
 select cron.schedule(
   'cleanup-chat-messages',
-  '0 20 * * *',  -- 20:00 UTC = 03:00 SA giờ VN (UTC+7)
-  $$
-    delete from public.chat_messages
-    where created_at < now() - interval '14 days';
-  $$
+  '0 20 * * *',
+  'select public.cleanup_chat_messages()'
 );
