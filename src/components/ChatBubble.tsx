@@ -233,7 +233,7 @@ export const ChatBubble: React.FC = () => {
             exit={{ opacity: 0, y: 24, scale: 0.94 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="relative flex flex-col rounded-2xl"
-            style={{ width: '340px', height: '520px', background: 'linear-gradient(165deg,#0d1322 0%,#080c16 100%)', border: '1px solid rgba(99,102,241,0.2)', boxShadow: '0 0 0 1px rgba(255,255,255,0.04),0 32px 64px -8px rgba(0,0,0,0.9),0 0 60px -10px rgba(99,102,241,0.15)', borderRadius: '16px' }}
+            style={{ width: '380px', height: '520px', background: 'linear-gradient(165deg,#0d1322 0%,#080c16 100%)', border: '1px solid rgba(99,102,241,0.2)', boxShadow: '0 0 0 1px rgba(255,255,255,0.04),0 32px 64px -8px rgba(0,0,0,0.9),0 0 60px -10px rgba(99,102,241,0.15)', borderRadius: '16px' }}
             onClick={() => showEmoji && setShowEmoji(false)}
           >
             <div className="absolute inset-x-0 top-0 h-px" style={{ background: 'linear-gradient(90deg,transparent,rgba(99,102,241,0.7),transparent)' }} />
@@ -329,7 +329,7 @@ export const ChatBubble: React.FC = () => {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       {/* Dòng 1: tên, icon phái, icon role, role, time */}
-                      <div className="flex items-center gap-1 flex-wrap">
+                      <div className="flex items-center gap-1 flex-wrap pr-16">
                         <span className={`text-[11px] font-bold leading-tight shrink-0 ${ROLE_CLASS[role] ?? 'text-emerald-300'}`}>{p?.display_name ?? '???'}</span>
                         {cls && <img src={`/icon-phai/${cls.iconName}`} className="w-3.5 h-3.5 object-contain shrink-0" alt="" />}
                         {roleIcon && <img src={roleIcon} alt="" className="w-3.5 h-3.5 object-contain shrink-0" />}
@@ -345,34 +345,40 @@ export const ChatBubble: React.FC = () => {
                         </div>
                       )}
 
-                      {/* Dòng 2: nội dung + actions */}
-                      <div className="flex items-start justify-between gap-1 mt-0.5">
-                        <p className={`text-sm leading-snug break-words ${isMe ? 'text-slate-200' : 'text-slate-400'}`}>{msg.content}</p>
-                        <AnimatePresence>
-                          {isHov && (
-                            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }}
-                              transition={{ duration: 0.1 }}
-                              className="flex items-center gap-0.5 shrink-0 bg-[#0d1322] rounded-lg border border-white/[0.07] px-1 py-0.5">
-                              <button type="button" onClick={() => { setReplyTo(msg); inputRef.current?.focus(); }}
-                                className="h-5 w-5 rounded flex items-center justify-center text-slate-500 hover:text-indigo-300 hover:bg-indigo-500/15 transition-all" title="Trả lời">
-                                <CornerUpLeft size={10} />
+                    {/* Dòng 2: nội dung */}
+                    <div className="relative mt-0.5">
+                      <p className={`text-sm leading-snug break-words pr-1 ${isMe ? 'text-slate-200' : 'text-slate-400'}`}>{msg.content}</p>
+                      {/* Action buttons — absolute góc phải dòng 1, không đè nội dung */}
+                      <AnimatePresence>
+                        {isHov && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.1 }}
+                            className="absolute -top-6 right-0 flex items-center gap-0.5 bg-[#0d1322] rounded-lg border border-white/[0.07] px-1 py-0.5 z-10"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <button type="button" onClick={() => { setReplyTo(msg); inputRef.current?.focus(); }}
+                              className="h-5 w-5 rounded flex items-center justify-center text-slate-500 hover:text-indigo-300 hover:bg-indigo-500/15 transition-all" title="Trả lời">
+                              <CornerUpLeft size={10} />
+                            </button>
+                            {canPin && (
+                              <button type="button" onClick={() => togglePin(msg)}
+                                className={`h-5 w-5 rounded flex items-center justify-center transition-all ${msg.pinned ? 'text-amber-300 hover:bg-amber-500/15' : 'text-slate-500 hover:text-amber-300 hover:bg-amber-500/10'}`} title={msg.pinned ? 'Bỏ ghim' : 'Ghim'}>
+                                {msg.pinned ? <PinOff size={10} /> : <Pin size={10} />}
                               </button>
-                              {canPin && (
-                                <button type="button" onClick={() => togglePin(msg)}
-                                  className={`h-5 w-5 rounded flex items-center justify-center transition-all ${msg.pinned ? 'text-amber-300 hover:bg-amber-500/15' : 'text-slate-500 hover:text-amber-300 hover:bg-amber-500/10'}`} title={msg.pinned ? 'Bỏ ghim' : 'Ghim'}>
-                                  {msg.pinned ? <PinOff size={10} /> : <Pin size={10} />}
-                                </button>
-                              )}
-                              {canDelete(msg) && (
-                                <button type="button" onClick={() => deleteMessage(msg.id)} disabled={isDel}
-                                  className="h-5 w-5 rounded flex items-center justify-center text-slate-500 hover:text-rose-300 hover:bg-rose-500/15 transition-all disabled:opacity-40" title="Xóa">
-                                  {isDel ? <span className="h-2.5 w-2.5 rounded-full border border-rose-500/30 border-t-rose-400 animate-spin" /> : <Trash2 size={10} />}
-                                </button>
-                              )}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </div>
+                            )}
+                            {canDelete(msg) && (
+                              <button type="button" onClick={() => deleteMessage(msg.id)} disabled={isDel}
+                                className="h-5 w-5 rounded flex items-center justify-center text-slate-500 hover:text-rose-300 hover:bg-rose-500/15 transition-all disabled:opacity-40" title="Xóa">
+                                {isDel ? <span className="h-2.5 w-2.5 rounded-full border border-rose-500/30 border-t-rose-400 animate-spin" /> : <Trash2 size={10} />}
+                              </button>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                     </div>
                   </motion.div>
                 );
