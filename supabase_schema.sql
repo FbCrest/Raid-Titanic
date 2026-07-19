@@ -287,31 +287,37 @@ create table if not exists public.chat_messages (
   id         uuid        primary key default gen_random_uuid(),
   user_id    uuid        not null references public.profiles(id) on delete cascade,
   content    text        not null check (char_length(content) <= 1000),
+  reply_to_id uuid       references public.chat_messages(id) on delete set null,
+  pinned     boolean     default false,
   created_at timestamptz default now()
 );
 alter table public.chat_messages enable row level security;
+alter table public.chat_messages add column if not exists reply_to_id uuid references public.chat_messages(id) on delete set null;
+alter table public.chat_messages add column if not exists pinned boolean default false;
 
 drop policy if exists "chat_select"  on public.chat_messages;
 drop policy if exists "chat_insert"  on public.chat_messages;
 drop policy if exists "chat_delete"  on public.chat_messages;
+drop policy if exists "chat_update"  on public.chat_messages;
 
--- Mọi thành viên đã duyệt đều đọc được
 create policy "chat_select" on public.chat_messages for select
   using (exists (select 1 from public.profiles where id = auth.uid() and role in ('member', 'admin', 'superadmin')));
 
--- Chỉ tự gửi tin của mình
 create policy "chat_insert" on public.chat_messages for insert
   with check (
     auth.uid() = user_id and
     exists (select 1 from public.profiles where id = auth.uid() and role in ('member', 'admin', 'superadmin'))
   );
 
--- Admin/superadmin có thể xóa tin nhắn vi phạm
 create policy "chat_delete" on public.chat_messages for delete
   using (
     auth.uid() = user_id or
     exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin'))
   );
+
+-- Admin/superadmin có thể pin/unpin tin nhắn
+create policy "chat_update" on public.chat_messages for update
+  using (exists (select 1 from public.profiles where id = auth.uid() and role in ('admin', 'superadmin')));
 
 do $$
 begin
