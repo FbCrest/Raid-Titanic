@@ -523,6 +523,7 @@ export const MembersPage: React.FC = () => {
           <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-600" />
           <input type="text" value={search} onChange={e => setSearch(e.target.value)}
             placeholder="Tìm theo tên..."
+            autoComplete="off"
             className="w-full rounded-xl bg-white/[0.04] border border-white/[0.07] pl-9 pr-4 py-2.5 text-sm text-slate-200 placeholder-slate-600 outline-none focus:border-indigo-500/40 focus:bg-white/[0.06] transition-all" />
         </motion.div>
 

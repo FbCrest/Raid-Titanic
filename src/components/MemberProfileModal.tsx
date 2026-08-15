@@ -46,6 +46,9 @@ const ResetPasswordSection: React.FC<{ targetId: string; targetName: string }> =
               value={newPw}
               onChange={e => { setNewPw(e.target.value); setError(''); setSuccess(false); }}
               placeholder="Mật khẩu mới (≥ 6 ký tự)"
+              autoComplete="new-password"
+              autoCorrect="off"
+              autoCapitalize="off"
               className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] px-3 py-2 pr-9 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 transition-all"
             />
             <button type="button" onClick={() => setShowPw(v => !v)}
