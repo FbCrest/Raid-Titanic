@@ -1,10 +1,70 @@
 import React, { useState } from 'react';
 import { motion } from 'motion/react';
-import { X, Save, Shield, KeyRound, Swords, Trash2, Pencil, CheckCircle, XCircle } from 'lucide-react';
+import { X, Save, Shield, KeyRound, Swords, Trash2, Pencil, CheckCircle, XCircle, Eye, EyeOff } from 'lucide-react';
 import { supabase, Profile } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { CLASS_OPTIONS } from '../data/classes';
 import { ClassDropdown } from './ClassDropdown';
+
+// ── Reset Password Section ──────────────────────────────────
+const ResetPasswordSection: React.FC<{ targetId: string; targetName: string }> = ({ targetId, targetName }) => {
+  const [newPw, setNewPw]       = useState('');
+  const [showPw, setShowPw]     = useState(false);
+  const [loading, setLoading]   = useState(false);
+  const [success, setSuccess]   = useState(false);
+  const [error, setError]       = useState('');
+
+  const handleReset = async () => {
+    if (newPw.length < 6) { setError('Mật khẩu tối thiểu 6 ký tự.'); return; }
+    setLoading(true); setError(''); setSuccess(false);
+    const { data: { session } } = await supabase.auth.getSession();
+    const res = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/reset-password`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${session?.access_token}` },
+        body: JSON.stringify({ userId: targetId, newPassword: newPw }),
+      }
+    );
+    const json = await res.json();
+    if (!res.ok) { setError(json.error ?? 'Lỗi không xác định.'); }
+    else { setSuccess(true); setNewPw(''); setTimeout(() => setSuccess(false), 3000); }
+    setLoading(false);
+  };
+
+  return (
+    <>
+      <div className="mx-5 h-px" style={{ background: 'rgba(255,255,255,0.05)' }} />
+      <div className="px-5 py-4">
+        <p className="text-xs font-semibold text-slate-500 uppercase tracking-widest mb-3 flex items-center gap-1.5">
+          <KeyRound size={11} /> Đặt lại mật khẩu
+        </p>
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <input
+              type={showPw ? 'text' : 'password'}
+              value={newPw}
+              onChange={e => { setNewPw(e.target.value); setError(''); setSuccess(false); }}
+              placeholder="Mật khẩu mới (≥ 6 ký tự)"
+              className="w-full rounded-xl bg-white/[0.04] border border-white/[0.08] px-3 py-2 pr-9 text-sm text-slate-100 placeholder-slate-600 outline-none focus:border-indigo-500/50 transition-all"
+            />
+            <button type="button" onClick={() => setShowPw(v => !v)}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+              {showPw ? <EyeOff size={13} /> : <Eye size={13} />}
+            </button>
+          </div>
+          <button type="button" onClick={handleReset} disabled={loading || !newPw}
+            className="shrink-0 rounded-xl px-3 py-2 text-sm font-semibold text-indigo-200 border border-indigo-500/30 hover:bg-indigo-500/15 transition-all disabled:opacity-40"
+            style={{ background: 'rgba(99,102,241,0.12)' }}>
+            {loading ? <span className="h-3.5 w-3.5 rounded-full border border-indigo-400/30 border-t-indigo-400 animate-spin inline-block" /> : 'Đặt lại'}
+          </button>
+        </div>
+        {error   && <p className="mt-2 text-xs text-rose-400">{error}</p>}
+        {success && <p className="mt-2 text-xs text-emerald-400">✓ Đã đặt lại mật khẩu cho {targetName}.</p>}
+      </div>
+    </>
+  );
+};
 
 interface MemberProfileModalProps {
   target: Profile;
@@ -294,6 +354,11 @@ export const MemberProfileModal: React.FC<MemberProfileModalProps> = ({
               </div>
             </div>
           </>
+        )}
+
+        {/* ── RESET MẬT KHẨU (Super Admin) ── */}
+        {isSuperAdmin && !isMe && (
+          <ResetPasswordSection targetId={target.id} targetName={target.display_name} />
         )}
 
         {/* ── PENDING ACTIONS (Admin xem user chờ duyệt) ── */}
